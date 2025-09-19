@@ -272,7 +272,7 @@ export default function ProjectContentPage({ params }: ProjectContentPageProps) 
                             </p>
                             <button
                               onClick={() => router.push(`/projects/${projectId}/keywords`)}
-                              className="text-xs text-purple-600 hover:text-purple-800 font-medium"
+                              className="px-3 py-1 text-xs bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded border border-purple-300 cursor-pointer transition-colors"
                             >
                               Generate Keywords →
                             </button>
