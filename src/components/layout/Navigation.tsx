@@ -58,8 +58,8 @@ export default function Navigation() {
               Users
             </Link>
             <Link
-              href="#"
-              className="text-gray-400 px-3 py-2 rounded-md text-sm font-medium cursor-not-allowed"
+              href="/projects"
+              className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
               Projects
             </Link>

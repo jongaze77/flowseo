@@ -24,7 +24,12 @@ export default function DashboardPage() {
           <div className="bg-white p-6 rounded-lg shadow border">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Projects</h3>
             <p className="text-gray-600 text-sm mb-4">View and manage your SEO projects</p>
-            <span className="text-gray-400 text-sm">Coming Soon</span>
+            <a
+              href="/projects"
+              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+            >
+              Manage Projects →
+            </a>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow border">
