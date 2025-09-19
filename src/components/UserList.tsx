@@ -93,7 +93,7 @@ export default function UserList({ users, onRemoveUser, isLoading = false }: Use
                 <button
                   onClick={() => confirmRemoval(user.id)}
                   disabled={removingUserId === user.id}
-                  className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-900 rounded border border-red-300 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {removingUserId === user.id ? 'Removing...' : 'Remove'}
                 </button>
