@@ -10,6 +10,7 @@ const keywordListQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
   search: z.string().nullish().transform(val => val || undefined),
+  pageId: z.string().nullish().transform(val => val || undefined).refine(val => !val || z.string().uuid().safeParse(val).success, "Invalid page ID format"), // Filter by specific page
   sortBy: z.enum(['created_at', 'name', 'generated_at']).default('created_at'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
@@ -85,15 +86,17 @@ export async function GET(
       page: searchParams.get('page'),
       limit: searchParams.get('limit'),
       search: searchParams.get('search'),
+      pageId: searchParams.get('pageId'),
       sortBy: searchParams.get('sortBy'),
       sortOrder: searchParams.get('sortOrder'),
     };
 
     const validatedQuery = keywordListQuerySchema.parse(queryParams);
 
-    // Build where clause for search
+    // Build where clause for search and page filtering
     const whereClause: {
       project_id: string;
+      page_id?: string;
       name?: {
         contains: string;
         mode: 'insensitive';
@@ -101,6 +104,10 @@ export async function GET(
     } = {
       project_id: resolvedParams.id,
     };
+
+    if (validatedQuery.pageId) {
+      whereClause.page_id = validatedQuery.pageId;
+    }
 
     if (validatedQuery.search) {
       whereClause.name = {

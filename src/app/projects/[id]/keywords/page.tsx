@@ -151,8 +151,8 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
     }
   }, [selectedPageId]);
 
-  // Fetch keyword lists for the project
-  const fetchKeywordLists = useCallback(async (id: string, page = 1, search = '') => {
+  // Fetch keyword lists for the project (optionally filtered by page)
+  const fetchKeywordLists = useCallback(async (id: string, page = 1, search = '', pageId?: string) => {
     try {
       setIsKeywordListsLoading(true);
 
@@ -165,6 +165,10 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
 
       if (search.trim()) {
         queryParams.append('search', search.trim());
+      }
+
+      if (pageId) {
+        queryParams.append('pageId', pageId);
       }
 
       const response = await fetch(`/api/v1/projects/${id}/keywords?${queryParams}`, {
@@ -193,9 +197,9 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
     // Refresh keyword lists to show the new one
     console.log('Keywords generated for list:', keywordListId);
     if (projectId) {
-      fetchKeywordLists(projectId, currentPage, searchTerm);
+      fetchKeywordLists(projectId, currentPage, searchTerm, selectedPageId);
     }
-  }, [projectId, currentPage, searchTerm, fetchKeywordLists]);
+  }, [projectId, currentPage, searchTerm, selectedPageId, fetchKeywordLists]);
 
   // Handle keyword list deletion
   const handleKeywordListDelete = useCallback(async (keywordListId: string) => {
@@ -210,7 +214,7 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
 
       if (response.ok) {
         // Refresh keyword lists
-        await fetchKeywordLists(projectId, currentPage, searchTerm);
+        await fetchKeywordLists(projectId, currentPage, searchTerm, selectedPageId);
       } else {
         const data = await response.json();
         throw new Error(data.error || 'Failed to delete keyword list');
@@ -218,33 +222,41 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
     } catch (error) {
       throw error; // Re-throw to be handled by KeywordList component
     }
-  }, [projectId, currentPage, searchTerm, fetchKeywordLists]);
+  }, [projectId, currentPage, searchTerm, selectedPageId, fetchKeywordLists]);
 
   // Handle search
   const handleSearch = useCallback((search: string) => {
     setSearchTerm(search);
     setCurrentPage(1);
     if (projectId) {
-      fetchKeywordLists(projectId, 1, search);
+      fetchKeywordLists(projectId, 1, search, selectedPageId);
     }
-  }, [projectId, fetchKeywordLists]);
+  }, [projectId, selectedPageId, fetchKeywordLists]);
 
   // Handle pagination
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
     if (projectId) {
-      fetchKeywordLists(projectId, page, searchTerm);
+      fetchKeywordLists(projectId, page, searchTerm, selectedPageId);
     }
-  }, [projectId, searchTerm, fetchKeywordLists]);
+  }, [projectId, searchTerm, selectedPageId, fetchKeywordLists]);
 
   // Fetch data when projectId changes
   useEffect(() => {
     if (projectId) {
       fetchProject(projectId);
       fetchPages(projectId);
-      fetchKeywordLists(projectId);
+      fetchKeywordLists(projectId, 1, '', selectedPageId);
     }
-  }, [projectId, fetchProject, fetchPages, fetchKeywordLists]);
+  }, [projectId, fetchProject, fetchPages, fetchKeywordLists, selectedPageId]);
+
+  // Refresh keyword lists when selected page changes
+  useEffect(() => {
+    if (projectId && selectedPageId) {
+      fetchKeywordLists(projectId, 1, searchTerm, selectedPageId);
+      setCurrentPage(1); // Reset to first page when changing page filter
+    }
+  }, [projectId, selectedPageId, searchTerm, fetchKeywordLists]);
 
 
   if (isLoading) {

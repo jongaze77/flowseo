@@ -204,6 +204,7 @@ export async function GET(
 
     return NextResponse.json(
       {
+        success: true,
         pages: pages.map(page => ({
           id: page.id,
           url: page.url,

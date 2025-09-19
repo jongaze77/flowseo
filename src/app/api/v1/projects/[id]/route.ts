@@ -84,13 +84,16 @@ export async function GET(
 
     return NextResponse.json(
       {
-        id: project.id,
-        name: project.name,
-        domain: project.domain,
-        tenantId: project.tenant_id,
-        tenantName: project.tenant.name,
-        createdAt: project.created_at,
-        updatedAt: project.updated_at,
+        success: true,
+        project: {
+          id: project.id,
+          name: project.name,
+          domain: project.domain,
+          tenantId: project.tenant_id,
+          tenantName: project.tenant.name,
+          createdAt: project.created_at,
+          updatedAt: project.updated_at,
+        }
       },
       { status: 200 }
     );

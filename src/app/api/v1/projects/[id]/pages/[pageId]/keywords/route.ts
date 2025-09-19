@@ -110,12 +110,43 @@ export async function POST(
     const body = await request.json();
     const validatedData = keywordGenerationEndpointSchema.parse(body);
 
-    // Prepare AI service request
+    // Fetch the actual API key from tenant AI settings
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: user.tenant_id },
+    });
+
+    if (!tenant || !tenant.ai_api_keys) {
+      return NextResponse.json(
+        { error: 'No AI settings configured. Please configure AI settings first.' },
+        { status: 400 }
+      );
+    }
+
+    const aiApiKeys = tenant.ai_api_keys as Record<string, {
+      apiKey: string;
+      model: string;
+      maxTokens: number;
+      temperature: number;
+      updatedAt: string;
+    }>;
+
+    const providerConfig = aiApiKeys[validatedData.aiConfig.provider];
+    if (!providerConfig || !providerConfig.apiKey) {
+      return NextResponse.json(
+        { error: `No API key configured for ${validatedData.aiConfig.provider}` },
+        { status: 400 }
+      );
+    }
+
+    // Prepare AI service request with actual API key
     const aiRequest = {
       content: page.content,
       promptText: validatedData.promptText,
       targetCount: validatedData.targetCount,
-      aiConfig: validatedData.aiConfig,
+      aiConfig: {
+        ...validatedData.aiConfig,
+        apiKey: providerConfig.apiKey, // Use actual API key from database
+      },
     };
 
     // Validate AI request
