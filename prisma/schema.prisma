@@ -21,6 +21,7 @@ model Tenant {
 
   // Relations
   users      User[]
+  projects   Project[]
 
   @@map("tenants")
 }
@@ -37,4 +38,20 @@ model User {
   // Username must be unique within tenant scope
   @@unique([username, tenant_id])
   @@map("users")
+}
+
+model Project {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(255)
+  domain    String?  @db.VarChar(255)
+  tenant_id String   @db.Uuid
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  tenant    Tenant @relation(fields: [tenant_id], references: [id])
+
+  // Project names must be unique within tenant scope
+  @@unique([name, tenant_id])
+  @@map("projects")
 }
