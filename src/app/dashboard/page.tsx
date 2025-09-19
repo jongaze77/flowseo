@@ -15,7 +15,7 @@ export default function DashboardPage() {
             <p className="text-gray-600 text-sm mb-4">Manage team members and their access to your workspace</p>
             <a
               href="/users"
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+              className="px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-900 rounded border border-blue-300 cursor-pointer transition-colors inline-block"
             >
               Manage Users →
             </a>
@@ -26,7 +26,7 @@ export default function DashboardPage() {
             <p className="text-gray-600 text-sm mb-4">View and manage your SEO projects</p>
             <a
               href="/projects"
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+              className="px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-900 rounded border border-blue-300 cursor-pointer transition-colors inline-block"
             >
               Manage Projects →
             </a>
