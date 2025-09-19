@@ -173,7 +173,7 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
       } else {
         setTestResult({ success: false, message: data.error || 'Connection test failed' });
       }
-    } catch (error) {
+    } catch (_error) {
       setTestResult({ success: false, message: 'Failed to test connection. Please check your settings.' });
     } finally {
       setIsTesting(false);
@@ -214,7 +214,7 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
       } else {
         showError('Save Failed', data.error || 'Failed to save AI settings');
       }
-    } catch (error) {
+    } catch (_error) {
       showError('Save Failed', 'Failed to save AI settings. Please try again.');
     } finally {
       setIsSaving(false);

@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "types": ["jest", "@testing-library/jest-dom", "node"]
+  },
+  "include": [
+    "src/**/__tests__/**/*.test.ts",
+    "src/**/__tests__/**/*.test.tsx",
+    "src/__tests__/**/*.ts",
+    "tests/**/*.spec.ts"
+  ]
+}

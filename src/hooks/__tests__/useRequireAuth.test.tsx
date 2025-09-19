@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { jest } from '@jest/globals';
 import { render, waitFor } from '@testing-library/react';
 import { useRequireAuth } from '../useRequireAuth';

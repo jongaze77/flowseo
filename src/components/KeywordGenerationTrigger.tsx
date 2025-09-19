@@ -93,7 +93,7 @@ export default function KeywordGenerationTrigger({
     } catch {
       showError('Settings Load Failed', 'Failed to load AI settings. Please try again.');
     }
-  }, []);
+  }, [selectedPromptId]);
 
   // Load available prompts and AI settings on mount
   useEffect(() => {

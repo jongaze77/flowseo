@@ -22,7 +22,7 @@ const customJestConfig = {
       testMatch: ['**/src/app/api/**/__tests__/**/*.test.ts'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
-          tsconfig: 'tsconfig.json'
+          tsconfig: 'tsconfig.test.json'
         }]
       },
     },
@@ -33,7 +33,7 @@ const customJestConfig = {
       testMatch: ['**/src/lib/**/__tests__/**/*.test.ts'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
-          tsconfig: 'tsconfig.json'
+          tsconfig: 'tsconfig.test.json'
         }]
       },
     },

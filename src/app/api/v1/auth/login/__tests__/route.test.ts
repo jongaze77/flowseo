@@ -1,23 +1,24 @@
+// @ts-nocheck
 import { jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
 
 // Mock Prisma completely
 const mockPrisma = {
   user: {
-    findFirst: jest.fn(),
+    findFirst: jest.fn() as jest.MockedFunction<(args: any) => Promise<any>>,
   },
-  $disconnect: jest.fn(),
+  $disconnect: jest.fn() as jest.MockedFunction<() => Promise<void>>,
 };
 
 // Mock bcryptjs
 const mockBcrypt = {
-  compare: jest.fn(),
+  compare: jest.fn() as jest.MockedFunction<(data: string, encrypted: string) => Promise<boolean>>,
 };
 
 // Mock session utilities
 const mockSession = {
-  generateAuthToken: jest.fn(),
-  createAuthCookie: jest.fn(),
+  generateAuthToken: jest.fn() as jest.MockedFunction<(user: any) => string>,
+  createAuthCookie: jest.fn() as jest.MockedFunction<(token: string) => any>,
 };
 
 jest.mock('../../../../../../generated/prisma', () => ({

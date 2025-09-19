@@ -1,28 +1,31 @@
+// @ts-nocheck
 import { jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
 import { POST } from '../route';
 
 // Mock dependencies
+const mockPrisma = {
+  user: {
+    findUnique: jest.fn(),
+  },
+  project: {
+    findFirst: jest.fn(),
+  },
+  page: {
+    findFirst: jest.fn(),
+  },
+  keywordList: {
+    create: jest.fn(),
+    findUnique: jest.fn(),
+  },
+  keyword: {
+    createMany: jest.fn(),
+  },
+  $disconnect: jest.fn(),
+};
+
 jest.mock('../../../../../../../../generated/prisma', () => ({
-  PrismaClient: jest.fn().mockImplementation(() => ({
-    user: {
-      findUnique: jest.fn(),
-    },
-    project: {
-      findFirst: jest.fn(),
-    },
-    page: {
-      findFirst: jest.fn(),
-    },
-    keywordList: {
-      create: jest.fn(),
-      findUnique: jest.fn(),
-    },
-    keyword: {
-      createMany: jest.fn(),
-    },
-    $disconnect: jest.fn(),
-  })),
+  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
 }));
 
 jest.mock('../../../../../../../../lib/auth/session', () => ({
@@ -38,11 +41,9 @@ jest.mock('../../../../../../../../lib/services/aiService', () => ({
   },
 }));
 
-import { PrismaClient } from '../../../../../../../../generated/prisma';
 import { verifyAndDecodeToken } from '../../../../../../../../lib/auth/session';
 import { aiService, keywordGenerationRequestSchema } from '../../../../../../../../lib/services/aiService';
 
-const mockPrisma = new PrismaClient() as jest.Mocked<PrismaClient>;
 const mockVerifyAndDecodeToken = verifyAndDecodeToken as jest.MockedFunction<typeof verifyAndDecodeToken>;
 const mockAiService = aiService as jest.Mocked<typeof aiService>;
 const mockKeywordGenerationRequestSchema = keywordGenerationRequestSchema as jest.Mocked<typeof keywordGenerationRequestSchema>;

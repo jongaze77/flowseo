@@ -83,7 +83,7 @@ export default function KeywordList({
       await navigator.clipboard.writeText(textToCopy);
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
-    } catch (error) {
+    } catch (_error) {
       showError('Copy Failed', 'Failed to copy keywords to clipboard. Please try again.');
     }
   };
@@ -96,7 +96,7 @@ export default function KeywordList({
 
     try {
       await onDelete(keywordList.id);
-    } catch (error) {
+    } catch (_error) {
       showError('Delete Failed', 'Failed to delete keyword list. Please try again.');
     } finally {
       setIsDeleting(false);

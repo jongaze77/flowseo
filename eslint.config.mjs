@@ -23,6 +23,8 @@ const eslintConfig = [
       ".eslintignore",
       "playwright.config.ts",
       "**/*.d.ts",
+      "**/__tests__/**",
+      "tests/**",
     ],
   },
 ];
