@@ -43,9 +43,13 @@ interface AISettingsFormProps {
 // Predefined model options
 const MODEL_OPTIONS = {
   openai: [
-    { value: 'gpt-4o', label: 'GPT-4 Turbo (Latest)' },
-    { value: 'gpt-4o-mini', label: 'GPT-4 Mini (Cost-effective)' },
-    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (Fast)' },
+    { value: 'gpt-5-chat-latest', label: 'GPT-5 Chat (Latest)' },
+    { value: 'gpt-5-nano', label: 'GPT-5 Nano (Fast)' },
+    { value: 'gpt-4.1', label: 'GPT-4.1 (Advanced)' },
+    { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini (Efficient)' },
+    { value: 'gpt-4o', label: 'GPT-4o (Multimodal)' },
+    { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Cost-effective)' },
+    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (Fast & Reliable)' },
   ],
   anthropic: [
     { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet (Latest)' },
