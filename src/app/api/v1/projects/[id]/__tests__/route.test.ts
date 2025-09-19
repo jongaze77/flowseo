@@ -26,8 +26,8 @@ jest.mock('../../../../../../generated/prisma', () => ({
 jest.mock('../../../../../../lib/auth/session', () => mockAuth);
 
 // Dynamic import after mocks are set up
-let PUT: (request: NextRequest, context: { params: { id: string } }) => Promise<Response>;
-let DELETE: (request: NextRequest, context: { params: { id: string } }) => Promise<Response>;
+let PUT: (request: NextRequest, context: { params: Promise<{ id: string }> }) => Promise<Response>;
+let DELETE: (request: NextRequest, context: { params: Promise<{ id: string }> }) => Promise<Response>;
 
 describe('/api/v1/projects/[id]', () => {
   beforeEach(async () => {
@@ -84,7 +84,7 @@ describe('/api/v1/projects/[id]', () => {
         }),
       });
 
-      const response = await PUT(request, { params: { id: 'project-123' } });
+      const response = await PUT(request, { params: Promise.resolve({ id: 'project-123' }) });
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -133,7 +133,7 @@ describe('/api/v1/projects/[id]', () => {
         }),
       });
 
-      const response = await PUT(request, { params: { id: 'nonexistent' } });
+      const response = await PUT(request, { params: Promise.resolve({ id: 'nonexistent' }) });
       const data = await response.json();
 
       expect(response.status).toBe(404);
@@ -153,7 +153,7 @@ describe('/api/v1/projects/[id]', () => {
         }),
       });
 
-      const response = await PUT(request, { params: { id: 'project-123' } });
+      const response = await PUT(request, { params: Promise.resolve({ id: 'project-123' }) });
       const data = await response.json();
 
       expect(response.status).toBe(401);
@@ -189,7 +189,7 @@ describe('/api/v1/projects/[id]', () => {
         }),
       });
 
-      const response = await PUT(request, { params: { id: 'project-123' } });
+      const response = await PUT(request, { params: Promise.resolve({ id: 'project-123' }) });
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -234,7 +234,7 @@ describe('/api/v1/projects/[id]', () => {
         }),
       });
 
-      const response = await PUT(request, { params: { id: 'project-123' } });
+      const response = await PUT(request, { params: Promise.resolve({ id: 'project-123' }) });
       const data = await response.json();
 
       expect(response.status).toBe(409);
@@ -270,7 +270,7 @@ describe('/api/v1/projects/[id]', () => {
         },
       });
 
-      const response = await DELETE(request, { params: { id: 'project-123' } });
+      const response = await DELETE(request, { params: Promise.resolve({ id: 'project-123' }) });
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -302,7 +302,7 @@ describe('/api/v1/projects/[id]', () => {
         },
       });
 
-      const response = await DELETE(request, { params: { id: 'nonexistent' } });
+      const response = await DELETE(request, { params: Promise.resolve({ id: 'nonexistent' }) });
       const data = await response.json();
 
       expect(response.status).toBe(404);
@@ -316,7 +316,7 @@ describe('/api/v1/projects/[id]', () => {
         method: 'DELETE',
       });
 
-      const response = await DELETE(request, { params: { id: 'project-123' } });
+      const response = await DELETE(request, { params: Promise.resolve({ id: 'project-123' }) });
       const data = await response.json();
 
       expect(response.status).toBe(401);

@@ -59,7 +59,7 @@ async function findProjectWithTenantCheck(projectId: string, tenantId: string) {
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Authenticate user
@@ -71,7 +71,7 @@ export async function PUT(
       );
     }
 
-    const projectId = params.id;
+    const { id: projectId } = await params;
 
     // Verify project exists and belongs to user's tenant
     const existingProject = await findProjectWithTenantCheck(projectId, user.tenant_id);
@@ -163,7 +163,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Authenticate user
@@ -175,7 +175,7 @@ export async function DELETE(
       );
     }
 
-    const projectId = params.id;
+    const { id: projectId } = await params;
 
     // Verify project exists and belongs to user's tenant
     const existingProject = await findProjectWithTenantCheck(projectId, user.tenant_id);
