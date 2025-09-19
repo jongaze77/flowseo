@@ -155,6 +155,12 @@ export default function ProjectList({
                   </div>
 
                   <div className="flex items-center space-x-2 ml-4">
+                    <a
+                      href={`/projects/${project.id}/content`}
+                      className="text-green-600 hover:text-green-700 text-sm font-medium px-2 py-1 rounded"
+                    >
+                      Content
+                    </a>
                     <button
                       onClick={() => handleEditProject(project)}
                       className="text-blue-600 hover:text-blue-700 text-sm font-medium px-2 py-1 rounded"

@@ -57,6 +57,55 @@ async function findProjectWithTenantCheck(projectId: string, tenantId: string) {
   return project;
 }
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Authenticate user
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    const { id: projectId } = await params;
+
+    // Verify project exists and belongs to user's tenant
+    const project = await findProjectWithTenantCheck(projectId, user.tenant_id);
+    if (!project) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        id: project.id,
+        name: project.name,
+        domain: project.domain,
+        tenantId: project.tenant_id,
+        tenantName: project.tenant.name,
+        createdAt: project.created_at,
+        updatedAt: project.updated_at,
+      },
+      { status: 200 }
+    );
+
+  } catch (error) {
+    console.error('Get project error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
