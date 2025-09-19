@@ -120,7 +120,8 @@ export default function AISettingsPage() {
   if (showForm) {
     // Find the corresponding AI settings for the model provider
     const modelProvider = editingPrompt?.ai_model ?
-      (editingPrompt.ai_model.startsWith('gpt') ? 'openai' : 'anthropic') : 'openai';
+      (editingPrompt.ai_model.startsWith('gpt') ? 'openai' :
+       editingPrompt.ai_model.includes('claude') ? 'anthropic' : 'openai') : 'openai';
     const correspondingAiSetting = aiSettings.find(setting => setting.provider === modelProvider);
 
     const initialConfig = editingPrompt ? {
