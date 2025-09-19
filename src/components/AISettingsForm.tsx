@@ -29,6 +29,7 @@ interface AIConfig {
 }
 
 interface PromptConfig {
+  id?: string; // For editing existing prompts
   name: string;
   promptText: string;
 }
@@ -89,6 +90,7 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
   const [temperature, setTemperature] = useState(initialConfig?.temperature || 0.7);
 
   // Prompt Configuration state
+  const [promptId] = useState(initialConfig?.id || '');
   const [promptName, setPromptName] = useState(initialConfig?.name || 'Default Keyword Generation');
   const [promptText, setPromptText] = useState(initialConfig?.promptText || DEFAULT_PROMPT_TEXT);
 
@@ -97,6 +99,7 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [isApiKeyMasked, setIsApiKeyMasked] = useState(initialConfig?.apiKey?.includes('••••') || false);
 
   // Error modal state
   const [errorModal, setErrorModal] = useState<{ isOpen: boolean; title: string; message: string }>({
@@ -124,12 +127,23 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    // Validate AI config
+    // Validate AI config - skip API key validation if it's masked
     try {
-      aiConfigSchema.parse({ provider, model, apiKey, maxTokens, temperature });
+      const configToValidate = {
+        provider,
+        model,
+        apiKey: isApiKeyMasked ? 'dummy_key_for_validation' : apiKey,
+        maxTokens,
+        temperature
+      };
+      aiConfigSchema.parse(configToValidate);
     } catch (error) {
       if (error instanceof z.ZodError) {
         error.issues.forEach(err => {
+          // Skip API key errors if the key is masked
+          if (err.path[0] === 'apiKey' && isApiKeyMasked) {
+            return;
+          }
           newErrors[err.path[0] as string] = err.message;
         });
       }
@@ -188,6 +202,23 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
   const handleSave = async () => {
     if (!validateForm()) return;
 
+    // If API key is masked, we need to get the existing key
+    let actualApiKey = apiKey;
+    if (isApiKeyMasked) {
+      try {
+        const settingsResponse = await fetch('/api/v1/ai/settings');
+        const settingsData = await settingsResponse.json();
+        const existingSetting = settingsData.aiSettings?.find((s: { provider: string; hasApiKey: boolean }) => s.provider === provider);
+        if (existingSetting?.hasApiKey) {
+          // We'll handle this in the backend by preserving existing keys
+          actualApiKey = 'PRESERVE_EXISTING_KEY';
+        }
+      } catch {
+        showError('Save Failed', 'Failed to retrieve existing API key.');
+        return;
+      }
+    }
+
     setIsSaving(true);
 
     try {
@@ -201,11 +232,12 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
           aiConfig: {
             provider,
             model,
-            apiKey,
+            apiKey: actualApiKey,
             maxTokens,
             temperature,
           },
           promptConfig: {
+            id: promptId || undefined, // Include prompt ID for editing
             name: promptName,
             promptText,
           },
@@ -279,14 +311,29 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 API Key *
               </label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder={`Enter your ${provider === 'openai' ? 'OpenAI' : 'Anthropic'} API key`}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              <div className="relative">
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => {
+                    setApiKey(e.target.value);
+                    setIsApiKeyMasked(false); // Unmask when user starts typing
+                  }}
+                  placeholder={isApiKeyMasked ? 'API key is saved (click to update)' : `Enter your ${provider === 'openai' ? 'OpenAI' : 'Anthropic'} API key`}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {isApiKeyMasked && (
+                  <div className="absolute right-2 top-2 text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                    Saved
+                  </div>
+                )}
+              </div>
               {errors.apiKey && <p className="mt-1 text-sm text-red-600">{errors.apiKey}</p>}
+              {isApiKeyMasked && (
+                <p className="mt-1 text-sm text-gray-600">
+                  Your API key is saved. Start typing to update it.
+                </p>
+              )}
             </div>
 
             {/* Advanced Settings */}

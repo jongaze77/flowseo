@@ -92,6 +92,11 @@ export default function AISettingsPage() {
     setShowForm(true);
   };
 
+  const handleDuplicatePrompt = (prompt: Prompt) => {
+    setEditingPrompt({ ...prompt, id: '', name: `${prompt.name} (Copy)` });
+    setShowForm(true);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -113,14 +118,20 @@ export default function AISettingsPage() {
   }
 
   if (showForm) {
+    // Find the corresponding AI settings for the model provider
+    const modelProvider = editingPrompt?.ai_model ?
+      (editingPrompt.ai_model.startsWith('gpt') ? 'openai' : 'anthropic') : 'openai';
+    const correspondingAiSetting = aiSettings.find(setting => setting.provider === modelProvider);
+
     const initialConfig = editingPrompt ? {
-      provider: 'openai' as const,
+      provider: modelProvider as 'openai' | 'anthropic',
       model: editingPrompt.ai_model,
-      apiKey: '',
-      maxTokens: 4000,
-      temperature: 0.7,
+      apiKey: correspondingAiSetting?.hasApiKey ? '••••••••••••' : '', // Show masked key if exists
+      maxTokens: correspondingAiSetting?.maxTokens || 4000,
+      temperature: correspondingAiSetting?.temperature || 0.7,
       name: editingPrompt.name,
       promptText: editingPrompt.prompt_text,
+      id: editingPrompt.id, // Pass the prompt ID for editing
     } : undefined;
 
     return (
@@ -276,6 +287,12 @@ export default function AISettingsPage() {
                           <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                             {prompt.ai_model}
                           </span>
+                          <button
+                            onClick={() => handleDuplicatePrompt(prompt)}
+                            className="text-sm text-gray-600 hover:text-gray-800"
+                          >
+                            Duplicate
+                          </button>
                           <button
                             onClick={() => handleEditPrompt(prompt)}
                             className="text-sm text-blue-600 hover:text-blue-800"

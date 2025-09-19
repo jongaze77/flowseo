@@ -16,6 +16,7 @@ const aiSettingsSchema = z.object({
     temperature: z.number().min(0).max(2),
   }),
   promptConfig: z.object({
+    id: z.string().uuid().optional(), // For editing existing prompts
     name: z.string().min(1, 'Prompt name is required').max(100),
     promptText: z.string().min(10, 'Prompt text is required').max(5000),
   }),
@@ -68,13 +69,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied to tenant' }, { status: 403 });
     }
 
-    // Update tenant AI API keys (store encrypted in production)
+    // Get existing AI keys to preserve them
+    const existingTenant = await prisma.tenant.findUnique({
+      where: { id: user.tenant_id },
+    });
+    const existingAiKeys = (existingTenant?.ai_api_keys as Record<string, {
+      apiKey: string;
+      model: string;
+      maxTokens: number;
+      temperature: number;
+      updatedAt: string;
+    }>) || {};
+
+    // Handle API key preservation for existing configs
+    let apiKeyToSave = validatedData.aiConfig.apiKey;
+    if (validatedData.aiConfig.apiKey === 'PRESERVE_EXISTING_KEY') {
+      const existingConfig = existingAiKeys[validatedData.aiConfig.provider];
+      if (existingConfig?.apiKey) {
+        apiKeyToSave = existingConfig.apiKey;
+      } else {
+        return NextResponse.json({ error: 'No existing API key found to preserve' }, { status: 400 });
+      }
+    }
+
+    // Update tenant AI API keys (preserve existing keys for other providers)
     await prisma.tenant.update({
       where: { id: user.tenant_id },
       data: {
         ai_api_keys: {
+          ...existingAiKeys,
           [validatedData.aiConfig.provider]: {
-            apiKey: validatedData.aiConfig.apiKey,
+            apiKey: apiKeyToSave,
             model: validatedData.aiConfig.model,
             maxTokens: validatedData.aiConfig.maxTokens,
             temperature: validatedData.aiConfig.temperature,
@@ -85,18 +110,23 @@ export async function POST(request: NextRequest) {
     });
 
     // Create or update AI prompt
-    const existingPrompt = await prisma.aIPrompt.findFirst({
-      where: {
-        tenant_id: user.tenant_id,
-        name: validatedData.promptConfig.name,
-      },
-    });
+    if (validatedData.promptConfig.id) {
+      // Update existing prompt by ID
+      const existingPrompt = await prisma.aIPrompt.findFirst({
+        where: {
+          id: validatedData.promptConfig.id,
+          tenant_id: user.tenant_id, // Security: ensure user owns the prompt
+        },
+      });
 
-    if (existingPrompt) {
-      // Update existing prompt
+      if (!existingPrompt) {
+        return NextResponse.json({ error: 'Prompt not found or access denied' }, { status: 404 });
+      }
+
       await prisma.aIPrompt.update({
-        where: { id: existingPrompt.id },
+        where: { id: validatedData.promptConfig.id },
         data: {
+          name: validatedData.promptConfig.name,
           prompt_text: validatedData.promptConfig.promptText,
           ai_model: validatedData.aiConfig.model,
         },
