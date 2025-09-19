@@ -48,26 +48,27 @@ const AI_SERVICE_CONFIG = {
   maxContentLength: 50000, // 50KB max content for AI processing
 };
 
-// Default prompt template for keyword generation
-export const DEFAULT_KEYWORD_PROMPT = `You are an expert SEO keyword researcher. Analyze the following content and generate exactly {{targetCount}} relevant keywords for SEO purposes.
+// Default prompt template for keyword generation (optimized version)
+export const DEFAULT_KEYWORD_PROMPT = `You are an expert SEO keyword researcher.
 
-Rules:
-1. Focus on primary topics, entities, and concepts from the content
-2. Include both short-tail (1-2 words) and long-tail (3+ words) keywords
-3. Prioritize commercial intent and search potential
-4. Avoid overly generic terms
-5. Include relevant semantic variations
+Task: Analyze the provided content and return exactly {{targetCount}} SEO keywords.
 
-Content to analyze:
-{{content}}
+Guidelines:
+1. Base keywords on the main topics, entities, and concepts in the content.
+2. Mix short-tail (1–2 words) and long-tail (3+ words).
+3. Prioritize keywords with commercial/search intent.
+4. Avoid generic or irrelevant terms.
+5. Include relevant semantic variations.
 
-Return ONLY a JSON array of keywords in this exact format:
+Output format:
+Return ONLY valid JSON in this array form:
 [
   {"text": "keyword phrase", "relevanceScore": 0.95},
   {"text": "another keyword", "relevanceScore": 0.88}
 ]
 
-Generate exactly {{targetCount}} keywords:`;
+Content:
+{{content}}`;
 
 /**
  * AI Service for keyword generation
@@ -151,23 +152,82 @@ export class AIService {
    * Call OpenAI API for keyword generation
    */
   private async callOpenAI(prompt: string, config: AIModelConfig): Promise<AIServiceResponse> {
+    // Define JSON schema for structured response (OpenAI-specific feature)
+    const keywordSchema = {
+      type: "object",
+      properties: {
+        keywords: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              text: {
+                type: "string",
+                description: "The keyword or phrase"
+              },
+              relevanceScore: {
+                type: "number",
+                minimum: 0,
+                maximum: 1,
+                description: "Relevance score between 0 and 1"
+              }
+            },
+            required: ["text", "relevanceScore"],
+            additionalProperties: false
+          }
+        }
+      },
+      required: ["keywords"],
+      additionalProperties: false
+    };
+
+    // Check if model supports structured outputs (GPT-4o and newer models)
+    const supportsStructuredOutput = this.modelSupportsStructuredOutput(config.model || 'gpt-4o-mini');
+
+    const requestBody: {
+      model: string;
+      messages: Array<{ role: string; content: string }>;
+      max_tokens?: number;
+      temperature?: number;
+      response_format?: {
+        type: string;
+        json_schema: {
+          name: string;
+          schema: object;
+          strict: boolean;
+        };
+      };
+    } = {
+      model: config.model || 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: config.maxTokens,
+      temperature: config.temperature,
+    };
+
+    // Add structured output for supported models
+    if (supportsStructuredOutput) {
+      requestBody.response_format = {
+        type: "json_schema",
+        json_schema: {
+          name: "keyword_generation",
+          schema: keywordSchema,
+          strict: true
+        }
+      };
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${config.apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: config.model || 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: config.maxTokens,
-        temperature: config.temperature,
-      }),
+      body: JSON.stringify(requestBody),
       signal: AbortSignal.timeout(AI_SERVICE_CONFIG.timeout),
     });
 
@@ -183,8 +243,16 @@ export class AIService {
       throw new Error('No content received from OpenAI API');
     }
 
+    // Handle structured response format vs regular content
+    let keywords: GeneratedKeyword[];
+    if (supportsStructuredOutput && this.isStructuredResponse(content)) {
+      keywords = this.parseStructuredResponse(content);
+    } else {
+      keywords = this.parseKeywordsFromResponse(content);
+    }
+
     return {
-      keywords: this.parseKeywordsFromResponse(content),
+      keywords,
       tokensUsed: data.usage?.total_tokens,
       processingTime: 0, // Will be set by caller
     };
@@ -285,6 +353,59 @@ export class AIService {
       }
 
       return keywords;
+    }
+  }
+
+  /**
+   * Check if model supports structured output (OpenAI JSON schema feature)
+   */
+  private modelSupportsStructuredOutput(model: string): boolean {
+    // OpenAI structured outputs are supported by GPT-4o and newer models
+    const supportedModels = [
+      'gpt-4o',
+      'gpt-4o-mini',
+      'gpt-4.1',
+      'gpt-4.1-mini',
+      'gpt-5-chat-latest',
+      'gpt-5-nano'
+    ];
+    return supportedModels.includes(model);
+  }
+
+  /**
+   * Check if response is in structured JSON format
+   */
+  private isStructuredResponse(content: string): boolean {
+    try {
+      const parsed = JSON.parse(content);
+      return parsed && typeof parsed === 'object' && 'keywords' in parsed;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Parse structured JSON response from OpenAI
+   */
+  private parseStructuredResponse(content: string): GeneratedKeyword[] {
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed && parsed.keywords && Array.isArray(parsed.keywords)) {
+        return parsed.keywords.map((keyword: {
+          text?: string;
+          relevanceScore?: number;
+          searchVolume?: number;
+          difficulty?: number;
+        }) => ({
+          text: keyword.text || '',
+          relevanceScore: keyword.relevanceScore || undefined,
+          searchVolume: keyword.searchVolume || undefined,
+          difficulty: keyword.difficulty || undefined,
+        })).filter((k: GeneratedKeyword) => k.text.trim().length > 0);
+      }
+      return [];
+    } catch {
+      return [];
     }
   }
 

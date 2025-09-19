@@ -58,26 +58,27 @@ const MODEL_OPTIONS = {
   ],
 };
 
-// Default prompt template
-const DEFAULT_PROMPT_TEXT = `You are an expert SEO keyword researcher. Analyze the following content and generate exactly {{targetCount}} relevant keywords for SEO purposes.
+// Default prompt template (optimized version)
+const DEFAULT_PROMPT_TEXT = `You are an expert SEO keyword researcher.
 
-Rules:
-1. Focus on primary topics, entities, and concepts from the content
-2. Include both short-tail (1-2 words) and long-tail (3+ words) keywords
-3. Prioritize commercial intent and search potential
-4. Avoid overly generic terms
-5. Include relevant semantic variations
+Task: Analyze the provided content and return exactly {{targetCount}} SEO keywords.
 
-Content to analyze:
-{{content}}
+Guidelines:
+1. Base keywords on the main topics, entities, and concepts in the content.
+2. Mix short-tail (1–2 words) and long-tail (3+ words).
+3. Prioritize keywords with commercial/search intent.
+4. Avoid generic or irrelevant terms.
+5. Include relevant semantic variations.
 
-Return ONLY a JSON array of keywords in this exact format:
+Output format:
+Return ONLY valid JSON in this array form:
 [
   {"text": "keyword phrase", "relevanceScore": 0.95},
   {"text": "another keyword", "relevanceScore": 0.88}
 ]
 
-Generate exactly {{targetCount}} keywords:`;
+Content:
+{{content}}`;
 
 export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCancel }: AISettingsFormProps) {
   // AI Configuration state
