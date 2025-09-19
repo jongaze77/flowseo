@@ -92,9 +92,11 @@ export async function POST(request: NextRequest) {
         { status: 201 }
       );
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle unique constraint violation
-      if (error.code === 'P2002' && error.meta?.target?.includes('name')) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002' &&
+          'meta' in error && error.meta && typeof error.meta === 'object' && 'target' in error.meta &&
+          Array.isArray(error.meta.target) && error.meta.target.includes('name')) {
         return NextResponse.json(
           { error: 'Project name already exists in your organization' },
           { status: 409 }

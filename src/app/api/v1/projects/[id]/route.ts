@@ -97,7 +97,7 @@ export async function PUT(
 
     // Remove undefined values to avoid updating with undefined
     const cleanUpdateData = Object.fromEntries(
-      Object.entries(updateData).filter(([_, value]) => value !== undefined)
+      Object.entries(updateData).filter(([, value]) => value !== undefined)
     );
 
     if (Object.keys(cleanUpdateData).length === 0) {
@@ -137,9 +137,11 @@ export async function PUT(
         { status: 200 }
       );
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle unique constraint violation
-      if (error.code === 'P2002' && error.meta?.target?.includes('name')) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002' &&
+          'meta' in error && error.meta && typeof error.meta === 'object' && 'target' in error.meta &&
+          Array.isArray(error.meta.target) && error.meta.target.includes('name')) {
         return NextResponse.json(
           { error: 'Project name already exists in your organization' },
           { status: 409 }
