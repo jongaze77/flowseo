@@ -50,8 +50,23 @@ model Project {
 
   // Relations
   tenant    Tenant @relation(fields: [tenant_id], references: [id])
+  pages     Page[]
 
   // Project names must be unique within tenant scope
   @@unique([name, tenant_id])
   @@map("projects")
+}
+
+model Page {
+  id         String   @id @default(uuid()) @db.Uuid
+  url        String?  @db.Text
+  title      String?  @db.VarChar(500)
+  content    String   @db.Text
+  project_id String   @db.Uuid
+  created_at DateTime @default(now())
+
+  // Relations
+  project    Project @relation(fields: [project_id], references: [id])
+
+  @@map("pages")
 }
