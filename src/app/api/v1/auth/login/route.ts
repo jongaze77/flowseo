@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '../../../../../generated/prisma';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { generateAuthToken, createAuthCookie } from '../../../../lib/auth/session';
 
 const prisma = new PrismaClient();
 
@@ -57,25 +57,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate JWT token
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      console.error('JWT_SECRET environment variable is not set');
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      );
-    }
+    const userPayload = {
+      userId: user.id,
+      username: user.username,
+      tenantId: user.tenant_id,
+      tenantName: user.tenant.name,
+    };
 
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        username: user.username,
-        tenantId: user.tenant_id,
-        tenantName: user.tenant.name,
-      },
-      jwtSecret,
-      { expiresIn: '24h' }
-    );
+    const token = generateAuthToken(userPayload);
 
     // Create response with httpOnly cookie
     const response = NextResponse.json(
@@ -91,14 +80,9 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    // Set httpOnly cookie for security
-    response.cookies.set('auth-token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60, // 24 hours in seconds
-      path: '/',
-    });
+    // Set httpOnly cookie for security using session utilities
+    const authCookie = createAuthCookie(token);
+    response.cookies.set(authCookie.name, authCookie.value, authCookie.options);
 
     return response;
 

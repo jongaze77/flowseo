@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '../../../../../generated/prisma';
-import jwt from 'jsonwebtoken';
+import { verifyAndDecodeToken, generateAuthToken, createAuthCookie } from '../../../../lib/auth/session';
 
 const prisma = new PrismaClient();
-
-interface JWTPayload {
-  userId: string;
-  username: string;
-  tenantId: string;
-  tenantName: string;
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,25 +16,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify JWT token
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      console.error('JWT_SECRET environment variable is not set');
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      );
-    }
-
-    let decoded: JWTPayload;
-    try {
-      decoded = jwt.verify(token, jwtSecret) as JWTPayload;
-    } catch (jwtError) {
+    // Verify and decode JWT token
+    const tokenResult = verifyAndDecodeToken(token);
+    if (!tokenResult) {
       return NextResponse.json(
         { error: 'Invalid token' },
         { status: 401 }
       );
     }
+
+    const { user: decoded, needsRenewal } = tokenResult;
 
     // Fetch fresh user data to ensure it's still valid
     const user = await prisma.user.findUnique({
@@ -58,7 +42,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         user: {
           id: user.id,
@@ -69,6 +53,21 @@ export async function GET(request: NextRequest) {
       },
       { status: 200 }
     );
+
+    // Renew token if needed
+    if (needsRenewal) {
+      const userPayload = {
+        userId: user.id,
+        username: user.username,
+        tenantId: user.tenant_id,
+        tenantName: user.tenant.name,
+      };
+      const newToken = generateAuthToken(userPayload);
+      const authCookie = createAuthCookie(newToken);
+      response.cookies.set(authCookie.name, authCookie.value, authCookie.options);
+    }
+
+    return response;
 
   } catch (error) {
     console.error('Auth verification error:', error);

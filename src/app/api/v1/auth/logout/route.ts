@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createExpiredAuthCookie } from '../../../../lib/auth/session';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,14 +9,9 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    // Clear the auth token cookie
-    response.cookies.set('auth-token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0, // Immediately expire the cookie
-      path: '/',
-    });
+    // Clear the auth token cookie using session utilities
+    const expiredCookie = createExpiredAuthCookie();
+    response.cookies.set(expiredCookie.name, expiredCookie.value, expiredCookie.options);
 
     return response;
 
