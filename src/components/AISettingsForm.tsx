@@ -53,7 +53,8 @@ const MODEL_OPTIONS = {
     { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (Fast & Reliable)' },
   ],
   anthropic: [
-    { value: 'claude-3-5-sonnet-20241022', label: 'Claude Sonnet 3.5 2024-10-22 (Latest)' },
+    { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4 (Latest)' },
+    { value: 'claude-3-5-sonnet-20241022', label: 'Claude Sonnet 3.5 2024-10-22' },
     { value: 'claude-3-5-haiku-20241022', label: 'Claude Haiku 3.5 (Fast)' },
     { value: 'claude-3-5-sonnet-20240620', label: 'Claude Sonnet 3.5 2024-06-20' },
     { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus (Most Capable)' },
