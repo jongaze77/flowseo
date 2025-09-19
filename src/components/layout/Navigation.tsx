@@ -64,6 +64,12 @@ export default function Navigation() {
               Projects
             </Link>
             <Link
+              href="/settings/ai"
+              className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              AI Settings
+            </Link>
+            <Link
               href="#"
               className="text-gray-400 px-3 py-2 rounded-md text-sm font-medium cursor-not-allowed"
             >

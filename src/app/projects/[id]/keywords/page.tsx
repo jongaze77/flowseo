@@ -189,8 +189,9 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
   }, []);
 
   // Handle keyword generation completion
-  const handleKeywordsGenerated = useCallback((_keywordListId: string) => {
+  const handleKeywordsGenerated = useCallback((keywordListId: string) => {
     // Refresh keyword lists to show the new one
+    console.log('Keywords generated for list:', keywordListId);
     if (projectId) {
       fetchKeywordLists(projectId, currentPage, searchTerm);
     }

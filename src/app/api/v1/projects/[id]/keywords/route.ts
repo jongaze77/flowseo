@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 const keywordListQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
-  search: z.string().optional(),
+  search: z.string().nullish().transform(val => val || undefined),
   sortBy: z.enum(['created_at', 'name', 'generated_at']).default('created_at'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
