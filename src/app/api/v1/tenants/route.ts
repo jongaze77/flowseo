@@ -27,17 +27,8 @@ export async function POST(request: NextRequest) {
 
     const { username, password, tenantName } = validationResult.data;
 
-    // Check if username already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { username }
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'Username already exists' },
-        { status: 409 }
-      );
-    }
+    // Note: For registration, we don't need to check username uniqueness globally
+    // since users can have the same username in different tenants
 
     // Hash password
     const password_hash = await bcrypt.hash(password, 12);

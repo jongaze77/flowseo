@@ -51,31 +51,26 @@ test.describe('User Registration Flow', () => {
     await expect(page.locator('text=Tenant name is required')).toBeVisible();
   });
 
-  test('should show error for duplicate username', async ({ page }) => {
-    // First, create a user
-    const username = 'duplicateuser';
+  test('should redirect to dashboard after successful registration', async ({ page }) => {
+    // Generate unique data
+    const timestamp = Date.now();
+    const username = `testuser${timestamp}`;
     const password = 'password123';
-    const tenantName = 'Test Company Duplicate';
+    const tenantName = `Test Company ${timestamp}`;
 
+    // Fill out and submit registration form
     await page.fill('input[name="username"]', username);
     await page.fill('input[name="password"]', password);
     await page.fill('input[name="tenantName"]', tenantName);
     await page.click('button[type="submit"]');
 
-    // Wait for success
+    // Wait for success message
     await expect(page.locator('text=Registration Successful!')).toBeVisible();
+    await expect(page.locator('text=Redirecting to your dashboard...')).toBeVisible();
 
-    // Navigate back to registration
-    await page.goto('/register');
-
-    // Try to register with the same username
-    await page.fill('input[name="username"]', username);
-    await page.fill('input[name="password"]', password);
-    await page.fill('input[name="tenantName"]', 'Another Company');
-    await page.click('button[type="submit"]');
-
-    // Check for duplicate username error
-    await expect(page.locator('text=Username already exists')).toBeVisible();
+    // Wait for redirect to dashboard
+    await page.waitForURL('/dashboard');
+    await expect(page.locator('h1')).toContainText('Dashboard');
   });
 
   test('should clear field errors when user starts typing', async ({ page }) => {

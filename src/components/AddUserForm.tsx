@@ -1,30 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 
 // Form validation schema
-const registrationSchema = z.object({
+const addUserSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters').max(50, 'Username must be less than 50 characters'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  tenantName: z.string().min(1, 'Tenant name is required').max(255, 'Tenant name must be less than 255 characters'),
 });
 
-type RegistrationData = z.infer<typeof registrationSchema>;
+type AddUserData = z.infer<typeof addUserSchema>;
 
-export default function RegistrationForm() {
-  const router = useRouter();
-  const [formData, setFormData] = useState<RegistrationData>({
+interface AddUserFormProps {
+  onUserAdded: () => void;
+  tenantId: string | null;
+}
+
+export default function AddUserForm({ onUserAdded, tenantId }: AddUserFormProps) {
+  const [formData, setFormData] = useState<AddUserData>({
     username: '',
     password: '',
-    tenantName: '',
   });
 
-  const [errors, setErrors] = useState<Partial<RegistrationData>>({});
+  const [errors, setErrors] = useState<Partial<AddUserData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -34,7 +35,7 @@ export default function RegistrationForm() {
     }));
 
     // Clear error for this field when user starts typing
-    if (errors[name as keyof RegistrationData]) {
+    if (errors[name as keyof AddUserData]) {
       setErrors(prev => ({
         ...prev,
         [name]: undefined
@@ -43,13 +44,13 @@ export default function RegistrationForm() {
   };
 
   const validateForm = (): boolean => {
-    const result = registrationSchema.safeParse(formData);
+    const result = addUserSchema.safeParse(formData);
 
     if (!result.success) {
-      const fieldErrors: Partial<RegistrationData> = {};
+      const fieldErrors: Partial<AddUserData> = {};
       result.error.issues.forEach(error => {
         if (error.path.length > 0) {
-          const field = error.path[0] as keyof RegistrationData;
+          const field = error.path[0] as keyof AddUserData;
           fieldErrors[field] = error.message;
         }
       });
@@ -64,7 +65,7 @@ export default function RegistrationForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validateForm() || !tenantId) {
       return;
     }
 
@@ -72,7 +73,7 @@ export default function RegistrationForm() {
     setSubmitError(null);
 
     try {
-      const response = await fetch('/api/v1/tenants', {
+      const response = await fetch(`/api/v1/tenants/${tenantId}/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,16 +84,13 @@ export default function RegistrationForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
+        throw new Error(data.error || 'Failed to add user');
       }
 
-      setSuccess(true);
-      setFormData({ username: '', password: '', tenantName: '' });
-
-      // Redirect to dashboard after successful registration
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1500);
+      // Reset form and close
+      setFormData({ username: '', password: '' });
+      setShowForm(false);
+      onUserAdded();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'An error occurred');
     } finally {
@@ -100,24 +98,41 @@ export default function RegistrationForm() {
     }
   };
 
-  if (success) {
+  const handleCancel = () => {
+    setFormData({ username: '', password: '' });
+    setErrors({});
+    setSubmitError(null);
+    setShowForm(false);
+  };
+
+  if (!showForm) {
     return (
-      <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-md">
-        <div className="text-center">
-          <div className="text-green-600 text-xl mb-4">✓</div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Registration Successful!</h2>
-          <p className="text-gray-600">Your account and tenant have been created successfully.</p>
-          <p className="text-gray-500 text-sm mt-2">Redirecting to your dashboard...</p>
+      <div className="bg-white rounded-lg shadow border">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Add Team Member</h3>
+              <p className="text-sm text-gray-600 mt-1">Invite a new member to your organization</p>
+            </div>
+            <button
+              onClick={() => setShowForm(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+            >
+              Add User
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Create Account</h2>
+    <div className="bg-white rounded-lg shadow border">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <h3 className="text-lg font-medium text-gray-900">Add New Team Member</h3>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="p-6 space-y-4">
         <div>
           <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
             Username
@@ -131,7 +146,7 @@ export default function RegistrationForm() {
             className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               errors.username ? 'border-red-500' : 'border-gray-300'
             }`}
-            placeholder="Enter your username"
+            placeholder="Enter username"
           />
           {errors.username && (
             <p className="mt-1 text-sm text-red-600">{errors.username}</p>
@@ -151,30 +166,10 @@ export default function RegistrationForm() {
             className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               errors.password ? 'border-red-500' : 'border-gray-300'
             }`}
-            placeholder="Enter your password"
+            placeholder="Enter password"
           />
           {errors.password && (
             <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-          )}
-        </div>
-
-        <div>
-          <label htmlFor="tenantName" className="block text-sm font-medium text-gray-700 mb-1">
-            Team/Organization Name
-          </label>
-          <input
-            type="text"
-            id="tenantName"
-            name="tenantName"
-            value={formData.tenantName}
-            onChange={handleInputChange}
-            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.tenantName ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="Enter your team or organization name"
-          />
-          {errors.tenantName && (
-            <p className="mt-1 text-sm text-red-600">{errors.tenantName}</p>
           )}
         </div>
 
@@ -184,17 +179,26 @@ export default function RegistrationForm() {
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={`w-full py-2 px-4 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-            isSubmitting
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
-          }`}
-        >
-          {isSubmitting ? 'Creating Account...' : 'Create Account'}
-        </button>
+        <div className="flex space-x-3 pt-4">
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`flex-1 py-2 px-4 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+              isSubmitting
+                ? 'bg-gray-400 cursor-not-allowed text-white'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
+          >
+            {isSubmitting ? 'Adding...' : 'Add User'}
+          </button>
+        </div>
       </form>
     </div>
   );
