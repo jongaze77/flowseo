@@ -184,7 +184,7 @@ export default function AISettingsPage() {
                 setShowForm(false);
                 setEditingPrompt(null);
               }}
-              className="inline-flex items-center text-blue-600 hover:text-blue-800"
+              className="inline-flex items-center text-blue-600 hover:text-blue-800 cursor-pointer"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -221,7 +221,7 @@ export default function AISettingsPage() {
             </div>
             <button
               onClick={() => setShowForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
             >
               Add New Configuration
             </button>
@@ -250,7 +250,7 @@ export default function AISettingsPage() {
                   </p>
                   <button
                     onClick={() => setShowForm(true)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
                   >
                     Configure AI Provider
                   </button>
@@ -313,7 +313,7 @@ export default function AISettingsPage() {
                   </p>
                   <button
                     onClick={() => setShowForm(true)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
                   >
                     Create Prompt Template
                   </button>
@@ -345,19 +345,19 @@ export default function AISettingsPage() {
                           </span>
                           <button
                             onClick={() => handleDuplicatePrompt(prompt)}
-                            className="text-sm text-gray-600 hover:text-gray-800"
+                            className="px-3 py-1 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900 rounded border border-gray-300 cursor-pointer transition-colors"
                           >
                             Duplicate
                           </button>
                           <button
                             onClick={() => handleEditPrompt(prompt)}
-                            className="text-sm text-blue-600 hover:text-blue-800"
+                            className="px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-900 rounded border border-blue-300 cursor-pointer transition-colors"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleDeletePrompt(prompt.id)}
-                            className="text-sm text-red-600 hover:text-red-800"
+                            className="px-3 py-1 text-sm bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-900 rounded border border-red-300 cursor-pointer transition-colors"
                           >
                             Delete
                           </button>
