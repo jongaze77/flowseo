@@ -157,20 +157,20 @@ export default function ProjectList({
                   <div className="flex items-center space-x-2 ml-4">
                     <a
                       href={`/projects/${project.id}/content`}
-                      className="text-green-600 hover:text-green-700 text-sm font-medium px-2 py-1 rounded"
+                      className="px-3 py-1 text-sm bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-900 rounded border border-green-300 cursor-pointer transition-colors"
                     >
                       Content
                     </a>
                     <button
                       onClick={() => handleEditProject(project)}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium px-2 py-1 rounded"
+                      className="px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-900 rounded border border-blue-300 cursor-pointer transition-colors"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => confirmDelete(project.id)}
                       disabled={deletingProjectId === project.id}
-                      className="text-red-600 hover:text-red-700 text-sm font-medium px-2 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 text-sm bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-900 rounded border border-red-300 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {deletingProjectId === project.id ? 'Deleting...' : 'Delete'}
                     </button>
