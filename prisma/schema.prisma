@@ -22,6 +22,7 @@ model Tenant {
   // Relations
   users      User[]
   projects   Project[]
+  ai_prompts AIPrompt[]
 
   @@map("tenants")
 }
@@ -51,6 +52,7 @@ model Project {
   // Relations
   tenant    Tenant @relation(fields: [tenant_id], references: [id])
   pages     Page[]
+  keyword_lists KeywordList[]
 
   // Project names must be unique within tenant scope
   @@unique([name, tenant_id])
@@ -67,6 +69,51 @@ model Page {
 
   // Relations
   project    Project @relation(fields: [project_id], references: [id])
+  keyword_lists KeywordList[]
 
   @@map("pages")
+}
+
+model AIPrompt {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenant_id   String   @db.Uuid
+  name        String   @db.VarChar(255)
+  prompt_text String   @db.Text
+  ai_model    String   @db.VarChar(100)
+  created_at  DateTime @default(now())
+
+  // Relations
+  tenant      Tenant @relation(fields: [tenant_id], references: [id])
+
+  @@map("ai_prompts")
+}
+
+model KeywordList {
+  id          String   @id @default(uuid()) @db.Uuid
+  project_id  String   @db.Uuid
+  page_id     String?  @db.Uuid
+  name        String   @db.VarChar(255)
+  generated_at DateTime @default(now())
+  created_at  DateTime @default(now())
+
+  // Relations
+  project     Project @relation(fields: [project_id], references: [id])
+  page        Page?   @relation(fields: [page_id], references: [id])
+  keywords    Keyword[]
+
+  @@map("keyword_lists")
+}
+
+model Keyword {
+  id              String   @id @default(uuid()) @db.Uuid
+  keyword_list_id String   @db.Uuid
+  text            String   @db.VarChar(255)
+  search_volume   Int?
+  difficulty      Float?
+  created_at      DateTime @default(now())
+
+  // Relations
+  keyword_list    KeywordList @relation(fields: [keyword_list_id], references: [id])
+
+  @@map("keywords")
 }
