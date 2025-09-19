@@ -9,10 +9,22 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'node',
+  projects: [
+    {
+      displayName: 'API Tests',
+      testEnvironment: 'node',
+      testMatch: ['**/src/app/api/**/__tests__/**/*.test.ts'],
+    },
+    {
+      displayName: 'React Tests',
+      testEnvironment: 'jsdom',
+      testMatch: ['**/src/(components|contexts|hooks)/**/__tests__/**/*.test.tsx'],
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+    },
+  ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
