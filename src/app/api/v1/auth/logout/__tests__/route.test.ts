@@ -9,7 +9,7 @@ const mockSession = {
 jest.mock('../../../../../../lib/auth/session', () => mockSession);
 
 // Dynamic import after mocks are set up
-let POST: typeof import('../route').POST;
+let POST: (request: NextRequest) => Promise<Response>;
 
 describe('/api/v1/auth/logout POST', () => {
   beforeEach(async () => {

@@ -25,8 +25,8 @@ jest.mock('../../../../../../../generated/prisma', () => ({
 jest.mock('bcryptjs', () => mockBcrypt);
 
 // Dynamic import after mocks are set up
-let POST: typeof import('../route').POST;
-let GET: typeof import('../route').GET;
+let POST: (request: NextRequest, context: { params: Promise<{ tenantId: string }> }) => Promise<Response>;
+let GET: (request: NextRequest, context: { params: Promise<{ tenantId: string }> }) => Promise<Response>;
 
 describe('/api/v1/tenants/[tenantId]/users', () => {
   const mockTenantId = 'tenant-123';

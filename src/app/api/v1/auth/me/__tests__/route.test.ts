@@ -23,7 +23,7 @@ jest.mock('../../../../../../generated/prisma', () => ({
 jest.mock('../../../../../../lib/auth/session', () => mockSession);
 
 // Dynamic import after mocks are set up
-let GET: typeof import('../route').GET;
+let GET: (request: NextRequest) => Promise<Response>;
 
 describe('/api/v1/auth/me GET', () => {
   beforeEach(async () => {

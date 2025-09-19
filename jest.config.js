@@ -9,6 +9,11 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'node',
+  testPathIgnorePatterns: [
+    '<rootDir>/.next/',
+    '<rootDir>/node_modules/',
+    '<rootDir>/tests/' // Exclude Playwright tests
+  ],
   projects: [
     {
       displayName: 'API Tests',

@@ -29,7 +29,7 @@ jest.mock('bcryptjs', () => mockBcrypt);
 jest.mock('../../../../../../lib/auth/session', () => mockSession);
 
 // Dynamic import after mocks are set up
-let POST: typeof import('../route').POST;
+let POST: (request: NextRequest) => Promise<Response>;
 
 describe('/api/v1/auth/login POST', () => {
   beforeEach(async () => {
@@ -83,7 +83,7 @@ describe('/api/v1/auth/login POST', () => {
       user: {
         id: 'user-123',
         username: 'testuser',
-        tenantId: 'tenant-123',
+        tenantId: '12345678-1234-1234-1234-123456789abc',
         tenantName: 'Test Company',
       },
     });
@@ -122,7 +122,7 @@ describe('/api/v1/auth/login POST', () => {
       body: JSON.stringify({
         username: 'testuser',
         password: 'password123',
-        tenantId: 'tenant-123',
+        tenantId: '12345678-1234-1234-1234-123456789abc',
       }),
       headers: {
         'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ describe('/api/v1/auth/login POST', () => {
 
     expect(response.status).toBe(200);
     expect(mockPrisma.user.findFirst).toHaveBeenCalledWith({
-      where: { username: 'testuser', tenant_id: 'tenant-123' },
+      where: { username: 'testuser', tenant_id: '12345678-1234-1234-1234-123456789abc' },
       include: { tenant: true },
     });
   });

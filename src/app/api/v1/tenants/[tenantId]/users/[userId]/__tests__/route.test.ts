@@ -17,7 +17,7 @@ jest.mock('../../../../../../../../generated/prisma', () => ({
 }));
 
 // Dynamic import after mocks are set up
-let DELETE: typeof import('../route').DELETE;
+let DELETE: (request: NextRequest, context: { params: Promise<{ tenantId: string; userId: string }> }) => Promise<Response>;
 
 describe('/api/v1/tenants/[tenantId]/users/[userId] DELETE', () => {
   const mockTenantId = 'tenant-123';
