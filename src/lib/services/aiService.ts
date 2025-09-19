@@ -126,7 +126,7 @@ export class AIService {
         return {
           keywords: [],
           processingTime,
-          error: `Validation error: ${error.errors.map(e => e.message).join(', ')}`
+          error: `Validation error: ${error.issues.map(e => e.message).join(', ')}`
         };
       }
 
@@ -299,7 +299,7 @@ export class AIService {
       if (error instanceof z.ZodError) {
         return {
           valid: false,
-          errors: error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+          errors: error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
         };
       }
       return { valid: false, errors: ['Unknown validation error'] };

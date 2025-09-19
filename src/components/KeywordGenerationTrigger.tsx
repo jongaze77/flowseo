@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { z } from 'zod';
 import ErrorModal from './ui/ErrorModal';
 
@@ -70,24 +70,11 @@ export default function KeywordGenerationTrigger({
     message: ''
   });
 
-  // Load available prompts and AI settings on mount
-  useEffect(() => {
-    loadAISettings();
-  }, [loadAISettings]);
-
-  // Auto-generate keyword list name when page title changes
-  useEffect(() => {
-    if (pageTitle && !keywordListName) {
-      const timestamp = new Date().toLocaleDateString();
-      setKeywordListName(`Keywords for "${pageTitle}" - ${timestamp}`);
-    }
-  }, [pageTitle, keywordListName]);
-
   const showError = (title: string, message: string) => {
     setErrorModal({ isOpen: true, title, message });
   };
 
-  const loadAISettings = async () => {
+  const loadAISettings = useCallback(async () => {
     try {
       const response = await fetch('/api/v1/ai/settings');
       const data = await response.json();
@@ -103,10 +90,23 @@ export default function KeywordGenerationTrigger({
       } else {
         showError('Settings Load Failed', data.error || 'Failed to load AI settings');
       }
-    } catch (error) {
+    } catch {
       showError('Settings Load Failed', 'Failed to load AI settings. Please try again.');
     }
-  };
+  }, []);
+
+  // Load available prompts and AI settings on mount
+  useEffect(() => {
+    loadAISettings();
+  }, [loadAISettings]);
+
+  // Auto-generate keyword list name when page title changes
+  useEffect(() => {
+    if (pageTitle && !keywordListName) {
+      const timestamp = new Date().toLocaleDateString();
+      setKeywordListName(`Keywords for "${pageTitle}" - ${timestamp}`);
+    }
+  }, [pageTitle, keywordListName]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -119,7 +119,7 @@ export default function KeywordGenerationTrigger({
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        error.errors.forEach(err => {
+        error.issues.forEach(err => {
           const field = err.path[0] === 'promptName' ? 'selectedPromptId' : err.path[0] as string;
           newErrors[field] = err.message;
         });

@@ -61,9 +61,12 @@ async function findProjectWithTenantCheck(projectId: string, tenantId: string) {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params
+    const resolvedParams = await params;
+
     // Authenticate user
     const user = await getAuthenticatedUser(request);
     if (!user) {
@@ -71,7 +74,7 @@ export async function GET(
     }
 
     // Validate project ownership
-    const project = await findProjectWithTenantCheck(params.id, user.tenant_id);
+    const project = await findProjectWithTenantCheck(resolvedParams.id, user.tenant_id);
     if (!project) {
       return NextResponse.json({ error: 'Project not found or access denied' }, { status: 404 });
     }
@@ -96,7 +99,7 @@ export async function GET(
         mode: 'insensitive';
       };
     } = {
-      project_id: params.id,
+      project_id: resolvedParams.id,
     };
 
     if (validatedQuery.search) {
@@ -175,7 +178,7 @@ export async function GET(
       meta: {
         totalKeywordLists: totalCount,
         totalKeywords,
-        projectId: params.id,
+        projectId: resolvedParams.id,
         projectName: project.name,
       },
     });
@@ -186,7 +189,7 @@ export async function GET(
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid query parameters', details: error.errors },
+        { error: 'Invalid query parameters', details: error.issues },
         { status: 400 }
       );
     }
@@ -207,9 +210,12 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params
+    const resolvedParams = await params;
+
     // Authenticate user
     const user = await getAuthenticatedUser(request);
     if (!user) {
@@ -217,7 +223,7 @@ export async function DELETE(
     }
 
     // Validate project ownership
-    const project = await findProjectWithTenantCheck(params.id, user.tenant_id);
+    const project = await findProjectWithTenantCheck(resolvedParams.id, user.tenant_id);
     if (!project) {
       return NextResponse.json({ error: 'Project not found or access denied' }, { status: 404 });
     }
@@ -232,7 +238,7 @@ export async function DELETE(
     const keywordList = await prisma.keywordList.findFirst({
       where: {
         id: keywordListId,
-        project_id: params.id,
+        project_id: resolvedParams.id,
       },
       include: {
         keywords: true,
@@ -264,7 +270,7 @@ export async function DELETE(
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        { error: 'Invalid request data', details: error.issues },
         { status: 400 }
       );
     }

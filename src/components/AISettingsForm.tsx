@@ -124,7 +124,7 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
       aiConfigSchema.parse({ provider, model, apiKey, maxTokens, temperature });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        error.errors.forEach(err => {
+        error.issues.forEach(err => {
           newErrors[err.path[0] as string] = err.message;
         });
       }
@@ -135,7 +135,7 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
       promptConfigSchema.parse({ name: promptName, promptText });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        error.errors.forEach(err => {
+        error.issues.forEach(err => {
           newErrors[err.path[0] === 'name' ? 'promptName' : 'promptText'] = err.message;
         });
       }

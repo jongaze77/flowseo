@@ -292,12 +292,12 @@ export default function KeywordList({
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false })}
+        onCancel={() => setDeleteModal({ isOpen: false })}
         onConfirm={handleDelete}
         title="Delete Keyword List"
         message={`Are you sure you want to delete "${keywordList.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
         variant="danger"
       />
 

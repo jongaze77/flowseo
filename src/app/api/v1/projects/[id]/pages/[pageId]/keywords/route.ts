@@ -82,9 +82,12 @@ async function findPageWithProjectCheck(pageId: string, projectId: string) {
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; pageId: string } }
+  { params }: { params: Promise<{ id: string; pageId: string }> }
 ) {
   try {
+    // Await params
+    const resolvedParams = await params;
+
     // Authenticate user
     const user = await getAuthenticatedUser(request);
     if (!user) {
@@ -92,13 +95,13 @@ export async function POST(
     }
 
     // Validate project ownership
-    const project = await findProjectWithTenantCheck(params.id, user.tenant_id);
+    const project = await findProjectWithTenantCheck(resolvedParams.id, user.tenant_id);
     if (!project) {
       return NextResponse.json({ error: 'Project not found or access denied' }, { status: 404 });
     }
 
     // Validate page ownership
-    const page = await findPageWithProjectCheck(params.pageId, params.id);
+    const page = await findPageWithProjectCheck(resolvedParams.pageId, resolvedParams.id);
     if (!page) {
       return NextResponse.json({ error: 'Page not found or access denied' }, { status: 404 });
     }
@@ -119,7 +122,7 @@ export async function POST(
     const aiRequestValidation = keywordGenerationRequestSchema.safeParse(aiRequest);
     if (!aiRequestValidation.success) {
       return NextResponse.json(
-        { error: 'Invalid AI request parameters', details: aiRequestValidation.error.errors },
+        { error: 'Invalid AI request parameters', details: aiRequestValidation.error.issues },
         { status: 400 }
       );
     }
@@ -145,8 +148,8 @@ export async function POST(
     const keywordList = await prisma.keywordList.create({
       data: {
         name: validatedData.keywordListName,
-        project_id: params.id,
-        page_id: params.pageId,
+        project_id: resolvedParams.id,
+        page_id: resolvedParams.pageId,
         generated_at: new Date(),
       },
     });
@@ -200,7 +203,7 @@ export async function POST(
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }
