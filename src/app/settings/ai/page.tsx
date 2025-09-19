@@ -6,6 +6,7 @@ import AppLayout from '../../../components/layout/AppLayout';
 import AISettingsForm from '../../../components/AISettingsForm';
 import ErrorModal from '../../../components/ui/ErrorModal';
 import { useAuth } from '../../../hooks/useAuth';
+import { PROMPT_TYPE_LABELS } from '../../../lib/services/aiService';
 
 interface AISettings {
   provider: string;
@@ -21,6 +22,9 @@ interface Prompt {
   name: string;
   prompt_text: string;
   ai_model: string;
+  prompt_type: string;
+  is_default: boolean;
+  is_enabled: boolean;
   created_at: string;
 }
 
@@ -97,6 +101,39 @@ export default function AISettingsPage() {
     setShowForm(true);
   };
 
+  const handleDeletePrompt = async (promptId: string) => {
+    if (!confirm('Are you sure you want to delete this prompt? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/v1/ai/settings?promptId=${promptId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/login');
+          return;
+        }
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        fetchAISettings(); // Refresh the list
+      } else {
+        showError('Delete Failed', data.error || 'Failed to delete prompt');
+      }
+    } catch (error) {
+      console.error('Prompt delete error:', error);
+      showError('Delete Failed', 'Failed to delete prompt. Please try again.');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -132,6 +169,9 @@ export default function AISettingsPage() {
       temperature: correspondingAiSetting?.temperature || 0.7,
       name: editingPrompt.name,
       promptText: editingPrompt.prompt_text,
+      promptType: editingPrompt.prompt_type,
+      isDefault: editingPrompt.is_default,
+      isEnabled: editingPrompt.is_enabled,
       id: editingPrompt.id, // Pass the prompt ID for editing
     } : undefined;
 
@@ -283,7 +323,22 @@ export default function AISettingsPage() {
                   {prompts.map((prompt) => (
                     <div key={prompt.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-medium text-gray-900">{prompt.name}</h3>
+                        <div className="flex items-center space-x-3">
+                          <h3 className="font-medium text-gray-900">{prompt.name}</h3>
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            {PROMPT_TYPE_LABELS[prompt.prompt_type as keyof typeof PROMPT_TYPE_LABELS] || prompt.prompt_type}
+                          </span>
+                          {prompt.is_default && (
+                            <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded font-medium">
+                              Default
+                            </span>
+                          )}
+                          {!prompt.is_enabled && (
+                            <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded">
+                              Disabled
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center space-x-2">
                           <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                             {prompt.ai_model}
@@ -299,6 +354,12 @@ export default function AISettingsPage() {
                             className="text-sm text-blue-600 hover:text-blue-800"
                           >
                             Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeletePrompt(prompt.id)}
+                            className="text-sm text-red-600 hover:text-red-800"
+                          >
+                            Delete
                           </button>
                         </div>
                       </div>

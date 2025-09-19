@@ -80,6 +80,9 @@ model AIPrompt {
   name        String   @db.VarChar(255)
   prompt_text String   @db.Text
   ai_model    String   @db.VarChar(100)
+  prompt_type String   @db.VarChar(50) @default("keyword_generation")
+  is_default  Boolean  @default(false)
+  is_enabled  Boolean  @default(true)
   created_at  DateTime @default(now())
 
   // Relations

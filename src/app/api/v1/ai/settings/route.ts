@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyAndDecodeToken } from '../../../../../lib/auth/session';
 import { PrismaClient } from '../../../../../generated/prisma';
+import { PROMPT_TYPES } from '../../../../../lib/services/aiService';
 
 const prisma = new PrismaClient();
 
@@ -19,6 +20,15 @@ const aiSettingsSchema = z.object({
     id: z.string().uuid().optional(), // For editing existing prompts
     name: z.string().min(1, 'Prompt name is required').max(100),
     promptText: z.string().min(10, 'Prompt text is required').max(5000),
+    promptType: z.enum([
+      PROMPT_TYPES.KEYWORD_GENERATION,
+      PROMPT_TYPES.CONTENT_ANALYSIS,
+      PROMPT_TYPES.SEO_OPTIMIZATION,
+      PROMPT_TYPES.META_GENERATION,
+      PROMPT_TYPES.COMPETITOR_ANALYSIS
+    ] as const),
+    isDefault: z.boolean().default(false),
+    isEnabled: z.boolean().default(true),
   }),
 });
 
@@ -109,6 +119,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Handle default prompt logic - if this prompt is being set as default,
+    // remove default from other prompts of the same type
+    if (validatedData.promptConfig.isDefault) {
+      await prisma.aIPrompt.updateMany({
+        where: {
+          tenant_id: user.tenant_id,
+          prompt_type: validatedData.promptConfig.promptType,
+          id: { not: validatedData.promptConfig.id || '' }
+        },
+        data: { is_default: false }
+      });
+    }
+
     // Create or update AI prompt
     if (validatedData.promptConfig.id) {
       // Update existing prompt by ID
@@ -129,6 +152,9 @@ export async function POST(request: NextRequest) {
           name: validatedData.promptConfig.name,
           prompt_text: validatedData.promptConfig.promptText,
           ai_model: validatedData.aiConfig.model,
+          prompt_type: validatedData.promptConfig.promptType,
+          is_default: validatedData.promptConfig.isDefault,
+          is_enabled: validatedData.promptConfig.isEnabled,
         },
       });
     } else {
@@ -139,6 +165,9 @@ export async function POST(request: NextRequest) {
           name: validatedData.promptConfig.name,
           prompt_text: validatedData.promptConfig.promptText,
           ai_model: validatedData.aiConfig.model,
+          prompt_type: validatedData.promptConfig.promptType,
+          is_default: validatedData.promptConfig.isDefault,
+          is_enabled: validatedData.promptConfig.isEnabled,
         },
       });
     }
@@ -229,6 +258,64 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('AI settings fetch error:', error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/**
+ * DELETE /api/v1/ai/settings?promptId=...
+ * Delete an AI prompt
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    // Authenticate user
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    // Get prompt ID from query parameters
+    const { searchParams } = new URL(request.url);
+    const promptId = searchParams.get('promptId');
+
+    if (!promptId) {
+      return NextResponse.json({ error: 'Prompt ID is required' }, { status: 400 });
+    }
+
+    // Verify prompt exists and user owns it
+    const existingPrompt = await prisma.aIPrompt.findFirst({
+      where: {
+        id: promptId,
+        tenant_id: user.tenant_id,
+      },
+    });
+
+    if (!existingPrompt) {
+      return NextResponse.json({ error: 'Prompt not found or access denied' }, { status: 404 });
+    }
+
+    // Delete the prompt
+    await prisma.aIPrompt.delete({
+      where: { id: promptId },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Prompt deleted successfully',
+    });
+
+  } catch (error) {
+    console.error('AI prompt delete error:', error);
 
     return NextResponse.json(
       {

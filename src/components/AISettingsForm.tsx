@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import ErrorModal from './ui/ErrorModal';
+import { PROMPT_TYPES, PROMPT_TYPE_LABELS } from '../lib/services/aiService';
 
 // AI configuration validation schemas
 const aiConfigSchema = z.object({
@@ -16,6 +17,9 @@ const aiConfigSchema = z.object({
 const promptConfigSchema = z.object({
   name: z.string().min(1, 'Prompt name is required').max(100, 'Name is too long'),
   promptText: z.string().min(10, 'Prompt must be at least 10 characters').max(5000, 'Prompt is too long'),
+  promptType: z.string().min(1, 'Prompt type is required'),
+  isDefault: z.boolean(),
+  isEnabled: z.boolean(),
 });
 
 type AIProvider = 'openai' | 'anthropic';
@@ -32,6 +36,9 @@ interface PromptConfig {
   id?: string; // For editing existing prompts
   name: string;
   promptText: string;
+  promptType: string;
+  isDefault: boolean;
+  isEnabled: boolean;
 }
 
 interface AISettingsFormProps {
@@ -96,6 +103,9 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
   const [promptId] = useState(initialConfig?.id || '');
   const [promptName, setPromptName] = useState(initialConfig?.name || 'Default Keyword Generation');
   const [promptText, setPromptText] = useState(initialConfig?.promptText || DEFAULT_PROMPT_TEXT);
+  const [promptType, setPromptType] = useState(initialConfig?.promptType || PROMPT_TYPES.KEYWORD_GENERATION);
+  const [isDefault, setIsDefault] = useState(initialConfig?.isDefault || false);
+  const [isEnabled, setIsEnabled] = useState(initialConfig?.isEnabled !== undefined ? initialConfig.isEnabled : true);
 
   // Form state
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -154,11 +164,19 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
 
     // Validate prompt config
     try {
-      promptConfigSchema.parse({ name: promptName, promptText });
+      promptConfigSchema.parse({
+        name: promptName,
+        promptText,
+        promptType,
+        isDefault,
+        isEnabled
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         error.issues.forEach(err => {
-          newErrors[err.path[0] === 'name' ? 'promptName' : 'promptText'] = err.message;
+          const fieldName = err.path[0] as string;
+          const mappedField = fieldName === 'name' ? 'promptName' : fieldName;
+          newErrors[mappedField] = err.message;
         });
       }
     }
@@ -243,6 +261,9 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
             id: promptId || undefined, // Include prompt ID for editing
             name: promptName,
             promptText,
+            promptType,
+            isDefault,
+            isEnabled,
           },
         }),
       });
@@ -438,6 +459,56 @@ export default function AISettingsForm({ tenantId, initialConfig, onSaved, onCan
                 placeholder="Enter your prompt template..."
               />
               {errors.promptText && <p className="mt-1 text-sm text-red-600">{errors.promptText}</p>}
+            </div>
+
+            {/* Prompt Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Prompt Type *
+              </label>
+              <select
+                value={promptType}
+                onChange={(e) => setPromptType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {Object.entries(PROMPT_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              {errors.promptType && <p className="mt-1 text-sm text-red-600">{errors.promptType}</p>}
+            </div>
+
+            {/* Settings Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Default Checkbox */}
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isDefault"
+                  checked={isDefault}
+                  onChange={(e) => setIsDefault(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="isDefault" className="ml-2 text-sm font-medium text-gray-700">
+                  Set as default for this prompt type
+                </label>
+              </div>
+
+              {/* Enabled Checkbox */}
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isEnabled"
+                  checked={isEnabled}
+                  onChange={(e) => setIsEnabled(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="isEnabled" className="ml-2 text-sm font-medium text-gray-700">
+                  Enable this prompt
+                </label>
+              </div>
             </div>
           </div>
         </div>

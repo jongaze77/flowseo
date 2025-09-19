@@ -3,6 +3,25 @@ import { z } from 'zod';
 // AI Provider types
 export type AIProvider = 'openai' | 'anthropic';
 
+// Prompt types for different system areas
+export const PROMPT_TYPES = {
+  KEYWORD_GENERATION: 'keyword_generation',
+  CONTENT_ANALYSIS: 'content_analysis',
+  SEO_OPTIMIZATION: 'seo_optimization',
+  META_GENERATION: 'meta_generation',
+  COMPETITOR_ANALYSIS: 'competitor_analysis'
+} as const;
+
+export type PromptType = typeof PROMPT_TYPES[keyof typeof PROMPT_TYPES];
+
+export const PROMPT_TYPE_LABELS = {
+  [PROMPT_TYPES.KEYWORD_GENERATION]: 'Keyword Generation',
+  [PROMPT_TYPES.CONTENT_ANALYSIS]: 'Content Analysis',
+  [PROMPT_TYPES.SEO_OPTIMIZATION]: 'SEO Optimization',
+  [PROMPT_TYPES.META_GENERATION]: 'Meta Description Generation',
+  [PROMPT_TYPES.COMPETITOR_ANALYSIS]: 'Competitor Analysis'
+} as const;
+
 // AI Model configuration schema
 export const aiModelConfigSchema = z.object({
   provider: z.enum(['openai', 'anthropic']),
