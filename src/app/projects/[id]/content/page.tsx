@@ -191,6 +191,23 @@ export default function ProjectContentPage({ params }: ProjectContentPageProps) 
                 <p className="text-sm text-gray-500 mt-1">Domain: {project.domain}</p>
               )}
             </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => router.push(`/projects/${projectId}/keywords`)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 flex items-center space-x-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>Generate Keywords</span>
+              </button>
+              <button
+                onClick={() => router.push(`/projects/${projectId}`)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Project Overview
+              </button>
+            </div>
           </div>
         </div>
 
@@ -249,9 +266,17 @@ export default function ProjectContentPage({ params }: ProjectContentPageProps) 
                             {truncateContent(page.content)}
                           </p>
 
-                          <p className="text-xs text-gray-500">
-                            Added {formatDate(page.createdAt)}
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-gray-500">
+                              Added {formatDate(page.createdAt)}
+                            </p>
+                            <button
+                              onClick={() => router.push(`/projects/${projectId}/keywords`)}
+                              className="text-xs text-purple-600 hover:text-purple-800 font-medium"
+                            >
+                              Generate Keywords →
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
