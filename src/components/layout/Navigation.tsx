@@ -1,16 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function Navigation() {
-  const [tenantName, setTenantName] = useState<string>('');
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const { user, logout } = useAuth();
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  // For now, we'll use a placeholder tenant name
-  // In a real app, this would come from authentication/session context
+  // Close menu when clicking outside
   useEffect(() => {
-    setTenantName('My Organization');
-  }, []);
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    }
+
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -20,11 +34,11 @@ export default function Navigation() {
           <div className="flex items-center">
             <Link href="/dashboard" className="flex items-center">
               <span className="text-xl font-bold text-blue-600">FlowSEO</span>
-              {tenantName && (
+              {user?.tenantName && (
                 <span className="ml-3 text-gray-500">|</span>
               )}
-              {tenantName && (
-                <span className="ml-3 text-gray-700 font-medium">{tenantName}</span>
+              {user?.tenantName && (
+                <span className="ml-3 text-gray-700 font-medium">{user.tenantName}</span>
               )}
             </Link>
           </div>
@@ -57,11 +71,44 @@ export default function Navigation() {
             </Link>
           </div>
 
-          {/* User menu placeholder */}
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              <span className="text-gray-600 text-sm font-medium">U</span>
-            </div>
+          {/* User menu */}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none"
+            >
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">
+                  {user?.username.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <span className="text-sm font-medium">{user?.username}</span>
+              <svg
+                className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                <div className="px-4 py-2 text-xs text-gray-500 border-b border-gray-100">
+                  {user?.tenantName}
+                </div>
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    logout();
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
