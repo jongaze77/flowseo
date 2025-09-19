@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useAuth } from '../hooks/useAuth';
 
@@ -28,6 +28,15 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+
+  // Reset form whenever the form is shown
+  useEffect(() => {
+    if (showForm) {
+      setFormData({ username: '', password: '' });
+      setErrors({});
+      setSubmitError(null);
+    }
+  }, [showForm]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -134,7 +143,12 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
         <h3 className="text-lg font-medium text-gray-900">Add New Team Member</h3>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 space-y-4">
+      <form
+        key={showForm ? 'form-visible' : 'form-hidden'}
+        onSubmit={handleSubmit}
+        className="p-6 space-y-4"
+        autoComplete="off"
+      >
         <div>
           <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
             Username
@@ -145,6 +159,10 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
             name="username"
             value={formData.username}
             onChange={handleInputChange}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
             className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               errors.username ? 'border-red-500' : 'border-gray-300'
             }`}
@@ -165,6 +183,7 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
             name="password"
             value={formData.password}
             onChange={handleInputChange}
+            autoComplete="new-password"
             className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               errors.password ? 'border-red-500' : 'border-gray-300'
             }`}
