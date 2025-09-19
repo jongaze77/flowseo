@@ -32,7 +32,7 @@ describe('webScraper', () => {
     });
 
     it('should throw error for invalid URLs', () => {
-      expect(() => validateUrl('not-a-url')).toThrow('Please enter a valid URL');
+      expect(() => validateUrl('://invalid')).toThrow('Please enter a valid URL');
       expect(() => validateUrl('')).toThrow('Please enter a valid URL');
     });
   });

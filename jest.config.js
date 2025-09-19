@@ -17,14 +17,42 @@ const customJestConfig = {
   projects: [
     {
       displayName: 'API Tests',
+      preset: 'ts-jest',
       testEnvironment: 'node',
       testMatch: ['**/src/app/api/**/__tests__/**/*.test.ts'],
+      transform: {
+        '^.+\\.(ts|tsx)$': ['ts-jest', {
+          tsconfig: 'tsconfig.json'
+        }]
+      },
+    },
+    {
+      displayName: 'Service Tests',
+      preset: 'ts-jest',
+      testEnvironment: 'node',
+      testMatch: ['**/src/lib/**/__tests__/**/*.test.ts'],
+      transform: {
+        '^.+\\.(ts|tsx)$': ['ts-jest', {
+          tsconfig: 'tsconfig.json'
+        }]
+      },
     },
     {
       displayName: 'React Tests',
+      preset: 'ts-jest',
       testEnvironment: 'jsdom',
       testMatch: ['**/src/(components|contexts|hooks)/**/__tests__/**/*.test.tsx'],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+      transform: {
+        '^.+\\.(ts|tsx)$': ['ts-jest', {
+          tsconfig: {
+            jsx: 'react-jsx'
+          }
+        }]
+      },
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
+      },
     },
   ],
   moduleNameMapper: {

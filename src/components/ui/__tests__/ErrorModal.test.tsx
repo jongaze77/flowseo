@@ -40,8 +40,8 @@ describe('ErrorModal', () => {
   it('should display error icon', () => {
     render(<ErrorModal {...defaultProps} />);
 
-    // Check for error icon (SVG with specific path)
-    const errorIcon = screen.getByRole('img', { hidden: true });
+    // Check for error icon (SVG element)
+    const errorIcon = document.querySelector('svg');
     expect(errorIcon).toBeInTheDocument();
     expect(errorIcon).toHaveClass('text-red-600');
   });

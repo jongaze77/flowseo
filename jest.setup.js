@@ -3,4 +3,5 @@
 
 // Learn more: https://jestjs.io/docs/configuration#setupfilesafterenv-array
 
-import '@testing-library/jest-dom';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+require('@testing-library/jest-dom');

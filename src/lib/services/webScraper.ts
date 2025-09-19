@@ -31,18 +31,19 @@ const SCRAPING_CONFIG = {
  * Validates and normalizes a URL
  */
 export function validateUrl(url: string): string {
-  const result = urlSchema.safeParse(url);
+  // First normalize URL by adding https:// if no protocol
+  let normalizedUrl = url.trim();
+  if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+    normalizedUrl = `https://${normalizedUrl}`;
+  }
+
+  // Then validate the normalized URL
+  const result = urlSchema.safeParse(normalizedUrl);
   if (!result.success) {
     throw new Error(result.error.issues[0].message);
   }
 
-  // Ensure URL has protocol
-  const normalizedUrl = result.data;
-  if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
-    return `https://${normalizedUrl}`;
-  }
-
-  return normalizedUrl;
+  return result.data;
 }
 
 /**
@@ -217,7 +218,16 @@ export async function scrapeUrl(url: string): Promise<ScrapingResult> {
  */
 export async function processContent(content: string, contentType: 'url' | 'html' | 'markdown'): Promise<ScrapingResult> {
   try {
-    const validatedType = contentTypeSchema.parse(contentType);
+    const validationResult = contentTypeSchema.safeParse(contentType);
+    if (!validationResult.success) {
+      return {
+        title: null,
+        content: '',
+        error: 'Invalid content type'
+      };
+    }
+
+    const validatedType = validationResult.data;
 
     switch (validatedType) {
       case 'url':
