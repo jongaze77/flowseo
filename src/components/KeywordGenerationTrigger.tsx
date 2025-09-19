@@ -73,7 +73,7 @@ export default function KeywordGenerationTrigger({
   // Load available prompts and AI settings on mount
   useEffect(() => {
     loadAISettings();
-  }, []);
+  }, [loadAISettings]);
 
   // Auto-generate keyword list name when page title changes
   useEffect(() => {

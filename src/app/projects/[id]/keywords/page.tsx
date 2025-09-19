@@ -245,9 +245,6 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
     }
   }, [projectId, fetchProject, fetchPages, fetchKeywordLists]);
 
-  const showError = (title: string, message: string) => {
-    setErrorModal({ isOpen: true, title, message });
-  };
 
   if (isLoading) {
     return (

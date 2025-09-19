@@ -89,7 +89,13 @@ export async function GET(
     const validatedQuery = keywordListQuerySchema.parse(queryParams);
 
     // Build where clause for search
-    const whereClause: any = {
+    const whereClause: {
+      project_id: string;
+      name?: {
+        contains: string;
+        mode: 'insensitive';
+      };
+    } = {
       project_id: params.id,
     };
 
@@ -104,7 +110,7 @@ export async function GET(
     const offset = (validatedQuery.page - 1) * validatedQuery.limit;
 
     // Build order by clause
-    const orderBy: any = {};
+    const orderBy: Record<string, string> = {};
     orderBy[validatedQuery.sortBy] = validatedQuery.sortOrder;
 
     // Fetch keyword lists with pagination

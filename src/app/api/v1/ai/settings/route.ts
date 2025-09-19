@@ -176,7 +176,13 @@ export async function GET(request: NextRequest) {
 
     // Format AI API keys (remove sensitive data)
     const aiSettings = tenant.ai_api_keys ?
-      Object.entries(tenant.ai_api_keys as any).map(([provider, config]: [string, any]) => ({
+      Object.entries(tenant.ai_api_keys as Record<string, {
+        model: string;
+        apiKey: string;
+        maxTokens: number;
+        temperature: number;
+        updatedAt: string;
+      }>).map(([provider, config]) => ({
         provider,
         model: config.model,
         hasApiKey: !!config.apiKey,

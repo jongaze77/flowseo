@@ -251,14 +251,19 @@ export class AIService {
         throw new Error('AI response is not an array');
       }
 
-      return keywords.map((keyword: any) => ({
+      return keywords.map((keyword: {
+        text?: string;
+        relevanceScore?: number;
+        searchVolume?: number;
+        difficulty?: number;
+      }) => ({
         text: keyword.text || '',
         relevanceScore: keyword.relevanceScore || undefined,
         searchVolume: keyword.searchVolume || undefined,
         difficulty: keyword.difficulty || undefined,
       })).filter(k => k.text.trim().length > 0);
 
-    } catch (error) {
+    } catch {
       // Fallback: try to extract keywords line by line
       const lines = content.split('\n').filter(line => line.trim());
       const keywords: GeneratedKeyword[] = [];
