@@ -24,15 +24,15 @@ const mockPrisma = {
   $disconnect: jest.fn(),
 };
 
-jest.mock('../../../../../../../../generated/prisma', () => ({
+jest.mock('@/generated/prisma', () => ({
   PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
 }));
 
-jest.mock('../../../../../../../../lib/auth/session', () => ({
+jest.mock('@/lib/auth/session', () => ({
   verifyAndDecodeToken: jest.fn(),
 }));
 
-jest.mock('../../../../../../../../lib/services/aiService', () => ({
+jest.mock('@/lib/services/aiService', () => ({
   aiService: {
     generateKeywords: jest.fn(),
   },

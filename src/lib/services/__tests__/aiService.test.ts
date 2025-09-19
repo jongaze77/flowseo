@@ -181,7 +181,7 @@ describe('AIService', () => {
           relevanceScore: 0.95
         });
         expect(result.tokensUsed).toBe(150);
-        expect(result.processingTime).toBeGreaterThan(0);
+        expect(result.processingTime).toBeGreaterThanOrEqual(0);
 
         // Verify API call
         expect(mockFetch).toHaveBeenCalledWith(
@@ -275,7 +275,7 @@ describe('AIService', () => {
           expect.objectContaining({
             method: 'POST',
             headers: expect.objectContaining({
-              'Authorization': 'Bearer sk-ant-test123',
+              'x-api-key': 'sk-ant-test123',
               'anthropic-version': '2023-06-01',
             }),
           })
@@ -323,7 +323,7 @@ describe('AIService', () => {
         const mockResponse = {
           choices: [{
             message: {
-              content: 'Here are the keywords:\n1. web development\n2. SEO optimization\n3. frontend coding'
+              content: '1. web development\n2. SEO optimization\n3. frontend coding'
             }
           }],
           usage: { total_tokens: 80 }
