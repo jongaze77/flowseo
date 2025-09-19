@@ -33,7 +33,7 @@ const SCRAPING_CONFIG = {
 export function validateUrl(url: string): string {
   const result = urlSchema.safeParse(url);
   if (!result.success) {
-    throw new Error(result.error.errors[0].message);
+    throw new Error(result.error.issues[0].message);
   }
 
   // Ensure URL has protocol
@@ -106,11 +106,6 @@ export function extractContentFromHtml(html: string): { title: string | null; co
 
   // Remove script and style elements
   $('script, style, noscript, iframe, object, embed').remove();
-
-  // Remove comments
-  $('*').contents().filter(function() {
-    return this.type === 'comment';
-  }).remove();
 
   // Extract title
   const title = $('title').first().text().trim() ||

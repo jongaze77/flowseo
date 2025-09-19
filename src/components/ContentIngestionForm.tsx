@@ -71,12 +71,12 @@ export default function ContentIngestionForm({ projectId, onContentSaved }: Cont
     if (activeTab === 'url') {
       const urlResult = urlSchema.safeParse(urlInput.trim());
       if (!urlResult.success) {
-        newErrors.url = urlResult.error.errors[0].message;
+        newErrors.url = urlResult.error.issues[0].message;
       }
     } else {
       const contentResult = contentSchema.safeParse(contentInput.trim());
       if (!contentResult.success) {
-        newErrors.content = contentResult.error.errors[0].message;
+        newErrors.content = contentResult.error.issues[0].message;
       }
     }
 

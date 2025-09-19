@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '../../../../components/layout/AppLayout';
 import ContentIngestionForm from '../../../../components/ContentIngestionForm';
@@ -42,7 +42,7 @@ export default function ProjectContentPage({ params }: ProjectContentPageProps) 
   }, [params]);
 
   // Fetch project details
-  const fetchProject = async (id: string) => {
+  const fetchProject = useCallback(async (id: string) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -70,10 +70,10 @@ export default function ProjectContentPage({ params }: ProjectContentPageProps) 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router]);
 
   // Fetch pages for project
-  const fetchPages = async (id: string) => {
+  const fetchPages = useCallback(async (id: string) => {
     try {
       setIsPagesLoading(true);
 
@@ -95,7 +95,7 @@ export default function ProjectContentPage({ params }: ProjectContentPageProps) 
     } finally {
       setIsPagesLoading(false);
     }
-  };
+  }, []);
 
   // Load project when projectId changes
   useEffect(() => {
@@ -103,7 +103,7 @@ export default function ProjectContentPage({ params }: ProjectContentPageProps) 
       fetchProject(projectId);
       fetchPages(projectId);
     }
-  }, [projectId]);
+  }, [projectId, fetchProject, fetchPages]);
 
   const handleContentSaved = () => {
     // Refresh pages list when new content is saved
