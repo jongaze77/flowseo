@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import AppLayout from '../../components/layout/AppLayout';
 import UserList from '../../components/UserList';
 import AddUserForm from '../../components/AddUserForm';
+import { useAuth } from '../../hooks/useAuth';
 
 interface User {
   id: string;
@@ -16,9 +17,8 @@ export default function UsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // For now, we don't have a real tenant ID from authentication
-  // In a real app, this would come from authentication/session context
-  const tenantId = null; // Will be set when we have proper auth
+  const { user } = useAuth();
+  const tenantId = user?.tenantId;
 
   const fetchUsers = async () => {
     // Skip fetching if no tenant ID available
@@ -78,49 +78,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
-
-  // Show authentication placeholder when no tenant ID
-  if (!tenantId) {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div className="border-b border-gray-200 pb-6">
-            <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-            <p className="text-gray-600 mt-2">Manage your team members and their access</p>
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-6 text-center">
-            <div className="text-blue-600 text-4xl mb-4">🔐</div>
-            <h3 className="text-lg font-medium text-blue-900 mb-2">Authentication Required</h3>
-            <p className="text-blue-700 mb-4">
-              User management requires authentication to determine your organization context.
-            </p>
-            <p className="text-sm text-blue-600">
-              This feature will be available once authentication is implemented in a future story.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Add Team Member</h3>
-              <p className="text-gray-600 text-sm mb-4">Create user accounts for your organization</p>
-              <div className="bg-gray-200 rounded-md p-4 text-center text-gray-500 text-sm">
-                Available after authentication
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Team Members</h3>
-              <p className="text-gray-600 text-sm mb-4">View and manage your team</p>
-              <div className="bg-gray-200 rounded-md p-4 text-center text-gray-500 text-sm">
-                Available after authentication
-              </div>
-            </div>
-          </div>
-        </div>
-      </AppLayout>
-    );
-  }
+  }, [tenantId]);
 
   return (
     <AppLayout>
@@ -150,7 +108,7 @@ export default function UsersPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
-            <AddUserForm onUserAdded={handleUserAdded} tenantId={tenantId} />
+            <AddUserForm onUserAdded={handleUserAdded} />
           </div>
           <div>
             <UserList

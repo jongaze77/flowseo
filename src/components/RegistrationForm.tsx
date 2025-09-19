@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
+import { useAuth } from '../hooks/useAuth';
 
 // Form validation schema
 const registrationSchema = z.object({
@@ -15,6 +16,7 @@ type RegistrationData = z.infer<typeof registrationSchema>;
 
 export default function RegistrationForm() {
   const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState<RegistrationData>({
     username: '',
     password: '',
@@ -86,13 +88,25 @@ export default function RegistrationForm() {
         throw new Error(data.error || 'Registration failed');
       }
 
-      setSuccess(true);
-      setFormData({ username: '', password: '', tenantName: '' });
+      // Automatically log in the user with the new account
+      const loginResult = await login(formData.username, formData.password, data.tenant.id);
 
-      // Redirect to dashboard after successful registration
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1500);
+      if (loginResult.success) {
+        setSuccess(true);
+        setFormData({ username: '', password: '', tenantName: '' });
+
+        // Redirect to dashboard after successful registration and login
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 1500);
+      } else {
+        // If login fails, still show success but suggest manual login
+        setSuccess(true);
+        setFormData({ username: '', password: '', tenantName: '' });
+        setTimeout(() => {
+          router.push('/login');
+        }, 1500);
+      }
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'An error occurred');
     } finally {
@@ -105,9 +119,9 @@ export default function RegistrationForm() {
       <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-md">
         <div className="text-center">
           <div className="text-green-600 text-xl mb-4">✓</div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Registration Successful!</h2>
-          <p className="text-gray-600">Your account and tenant have been created successfully.</p>
-          <p className="text-gray-500 text-sm mt-2">Redirecting to your dashboard...</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome to FlowSEO!</h2>
+          <p className="text-gray-600">Your account has been created and you're now logged in.</p>
+          <p className="text-gray-500 text-sm mt-2">Taking you to your dashboard...</p>
         </div>
       </div>
     );

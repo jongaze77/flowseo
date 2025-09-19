@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { z } from 'zod';
+import { useAuth } from '../hooks/useAuth';
 
 // Form validation schema
 const addUserSchema = z.object({
@@ -13,10 +14,11 @@ type AddUserData = z.infer<typeof addUserSchema>;
 
 interface AddUserFormProps {
   onUserAdded: () => void;
-  tenantId: string | null;
 }
 
-export default function AddUserForm({ onUserAdded, tenantId }: AddUserFormProps) {
+export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
+  const { user } = useAuth();
+  const tenantId = user?.tenantId;
   const [formData, setFormData] = useState<AddUserData>({
     username: '',
     password: '',
