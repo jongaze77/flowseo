@@ -15,7 +15,7 @@ jest.mock('next/navigation', () => ({
 
 // Mock fetch globally
 const mockFetch = jest.fn();
-global.fetch = mockFetch as any;
+global.fetch = mockFetch as jest.MockedFunction<typeof fetch>;
 
 // Mock window.location
 const mockLocation = {

@@ -120,7 +120,7 @@ export default function RegistrationForm() {
         <div className="text-center">
           <div className="text-green-600 text-xl mb-4">✓</div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome to FlowSEO!</h2>
-          <p className="text-gray-600">Your account has been created and you're now logged in.</p>
+          <p className="text-gray-600">Your account has been created and you&apos;re now logged in.</p>
           <p className="text-gray-500 text-sm mt-2">Taking you to your dashboard...</p>
         </div>
       </div>

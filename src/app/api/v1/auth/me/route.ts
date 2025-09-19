@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '../../../../../generated/prisma';
-import { verifyAndDecodeToken, generateAuthToken, createAuthCookie } from '../../../../lib/auth/session';
+import { verifyAndDecodeToken, generateAuthToken, createAuthCookie } from '../../../../../lib/auth/session';
 
 const prisma = new PrismaClient();
 

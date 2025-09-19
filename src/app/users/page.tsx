@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AppLayout from '../../components/layout/AppLayout';
 import UserList from '../../components/UserList';
 import AddUserForm from '../../components/AddUserForm';
@@ -20,7 +20,7 @@ export default function UsersPage() {
   const { user } = useAuth();
   const tenantId = user?.tenantId;
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     // Skip fetching if no tenant ID available
     if (!tenantId) {
       setIsLoading(false);
@@ -45,7 +45,7 @@ export default function UsersPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [tenantId]);
 
   const handleRemoveUser = async (userId: string) => {
     if (!tenantId) return;
@@ -78,7 +78,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [tenantId]);
+  }, [tenantId, fetchUsers]);
 
   return (
     <AppLayout>
