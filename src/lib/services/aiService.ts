@@ -265,7 +265,7 @@ export class AIService {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${config.apiKey}`,
+        'x-api-key': config.apiKey,
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01',
       },
