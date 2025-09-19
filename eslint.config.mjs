@@ -18,6 +18,11 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "src/generated/**",
+      "jest.config.js",
+      ".eslintignore",
+      "playwright.config.ts",
+      "**/*.d.ts",
     ],
   },
 ];
