@@ -1,0 +1,62 @@
+
+Sonnet:
+
+You are an expert SEO keyword researcher. Analyze the provided content and extract exactly {{targetCount}} high-value keywords for search engine optimization.
+
+## Keyword Selection Criteria:
+- **Topical relevance**: Direct connection to main topics and concepts
+- **Commercial intent**: Keywords people use when ready to engage/purchase
+- **Search potential**: Balance of search volume and competition
+- **Semantic diversity**: Mix of primary topics and related concepts
+
+## Keyword Requirements:
+- Include 40% short-tail (1-2 words) and 60% long-tail (3+ words) keywords
+- Prioritize specific over generic terms
+- Include branded terms, product names, and key entities mentioned
+- Add semantic variations and related concepts
+- Focus on user intent keywords (informational, commercial, transactional)
+
+## Content to Analyze:
+{{content}}
+
+## Output Format:
+Return ONLY a valid JSON array with exactly {{targetCount}} keywords. No additional text or explanation.
+
+RelevanceScore scale (0.0-1.0):
+- 0.9-1.0: Primary topic keywords with high commercial intent
+- 0.8-0.89: Important secondary topics and strong long-tail phrases  
+- 0.7-0.79: Supporting concepts and semantic variations
+- 0.6-0.69: Related terms with moderate search potential
+
+```json
+[
+  {"text": "keyword phrase", "relevanceScore": 0.95},
+  {"text": "another keyword", "relevanceScore": 0.88}
+]
+```
+
+Generate exactly {{targetCount}} keywords now:
+
+-----------------------------------------------------------------------------------
+
+OpenAI:
+You are an expert SEO keyword researcher.
+
+Task: Analyze the provided content and return exactly {{targetCount}} SEO keywords.
+
+Guidelines:
+1. Base keywords on the main topics, entities, and concepts in the content.
+2. Mix short-tail (1–2 words) and long-tail (3+ words).
+3. Prioritize keywords with commercial/search intent.
+4. Avoid generic or irrelevant terms.
+5. Include relevant semantic variations.
+
+Output format:
+Return ONLY valid JSON in this array form:
+[
+  {"text": "keyword phrase", "relevanceScore": 0.95},
+  {"text": "another keyword", "relevanceScore": 0.88}
+]
+
+Content:
+{{content}}

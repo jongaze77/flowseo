@@ -9,6 +9,7 @@ const prisma = new PrismaClient();
 const updateProjectSchema = z.object({
   name: z.string().min(1).max(255).trim().optional(),
   domain: z.string().max(255).trim().optional().nullable(),
+  default_region: z.enum(['US', 'UK', 'AU', 'CA']).optional(),
 });
 
 // Helper function to get authenticated user from request
@@ -89,6 +90,7 @@ export async function GET(
           id: project.id,
           name: project.name,
           domain: project.domain,
+          default_region: project.default_region,
           tenantId: project.tenant_id,
           tenantName: project.tenant.name,
           createdAt: project.created_at,
@@ -181,6 +183,7 @@ export async function PUT(
           id: updatedProject.id,
           name: updatedProject.name,
           domain: updatedProject.domain,
+          default_region: updatedProject.default_region,
           tenantId: updatedProject.tenant_id,
           tenantName: updatedProject.tenant.name,
           createdAt: updatedProject.created_at,

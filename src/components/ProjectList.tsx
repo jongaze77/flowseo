@@ -8,6 +8,7 @@ interface Project {
   id: string;
   name: string;
   domain: string | null;
+  default_region: 'US' | 'UK' | 'AU' | 'CA';
   tenantId: string;
   tenantName: string;
   createdAt: string;

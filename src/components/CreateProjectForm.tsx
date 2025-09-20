@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
+import RegionSelector, { regionSchema, type Region } from './ui/RegionSelector';
 
 // Form validation schema
 const createProjectSchema = z.object({
   name: z.string().min(1, 'Project name is required').max(255, 'Project name must be less than 255 characters').trim(),
   domain: z.string().max(255, 'Domain must be less than 255 characters').trim().optional().or(z.literal('')),
+  default_region: regionSchema,
 });
 
 type CreateProjectData = z.infer<typeof createProjectSchema>;
@@ -19,6 +21,7 @@ export default function CreateProjectForm({ onProjectCreated }: CreateProjectFor
   const [formData, setFormData] = useState<CreateProjectData>({
     name: '',
     domain: '',
+    default_region: 'UK' as Region,
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof CreateProjectData, string>>>({});
@@ -29,7 +32,7 @@ export default function CreateProjectForm({ onProjectCreated }: CreateProjectFor
   // Reset form whenever the form is shown
   useEffect(() => {
     if (showForm) {
-      setFormData({ name: '', domain: '' });
+      setFormData({ name: '', domain: '', default_region: 'UK' as Region });
       setErrors({});
       setSubmitError(null);
     }
@@ -47,6 +50,21 @@ export default function CreateProjectForm({ onProjectCreated }: CreateProjectFor
       setErrors(prev => ({
         ...prev,
         [name]: undefined
+      }));
+    }
+  };
+
+  const handleRegionChange = (region: Region) => {
+    setFormData(prev => ({
+      ...prev,
+      default_region: region
+    }));
+
+    // Clear error for region field when user changes selection
+    if (errors.default_region) {
+      setErrors(prev => ({
+        ...prev,
+        default_region: undefined
       }));
     }
   };
@@ -84,6 +102,7 @@ export default function CreateProjectForm({ onProjectCreated }: CreateProjectFor
       const requestData = {
         name: formData.name,
         domain: formData.domain || null,
+        default_region: formData.default_region,
       };
 
       const response = await fetch('/api/v1/projects', {
@@ -101,7 +120,7 @@ export default function CreateProjectForm({ onProjectCreated }: CreateProjectFor
       }
 
       // Reset form and close
-      setFormData({ name: '', domain: '' });
+      setFormData({ name: '', domain: '', default_region: 'UK' as Region });
       setShowForm(false);
       onProjectCreated();
     } catch (error) {
@@ -112,7 +131,7 @@ export default function CreateProjectForm({ onProjectCreated }: CreateProjectFor
   };
 
   const handleCancel = () => {
-    setFormData({ name: '', domain: '' });
+    setFormData({ name: '', domain: '', default_region: 'UK' as Region });
     setErrors({});
     setSubmitError(null);
     setShowForm(false);
@@ -201,6 +220,14 @@ export default function CreateProjectForm({ onProjectCreated }: CreateProjectFor
             Associate this project with a specific domain for better organization
           </p>
         </div>
+
+        <RegionSelector
+          value={formData.default_region}
+          onChange={handleRegionChange}
+          error={errors.default_region}
+          label="Default Geographic Region"
+          required={true}
+        />
 
         {submitError && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-md">

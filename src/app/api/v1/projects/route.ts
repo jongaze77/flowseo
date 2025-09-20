@@ -9,6 +9,7 @@ const prisma = new PrismaClient();
 const createProjectSchema = z.object({
   name: z.string().min(1).max(255).trim(),
   domain: z.string().max(255).trim().optional().nullable(),
+  default_region: z.enum(['US', 'UK', 'AU', 'CA']).default('UK'),
 });
 
 // Helper function to get authenticated user from request
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, domain } = validationResult.data;
+    const { name, domain, default_region } = validationResult.data;
 
     // Create project with tenant scope
     try {
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
         data: {
           name,
           domain: domain || null,
+          default_region,
           tenant_id: user.tenant_id,
         },
         include: {
@@ -84,6 +86,7 @@ export async function POST(request: NextRequest) {
           id: project.id,
           name: project.name,
           domain: project.domain,
+          default_region: project.default_region,
           tenantId: project.tenant_id,
           tenantName: project.tenant.name,
           createdAt: project.created_at,
@@ -149,6 +152,7 @@ export async function GET(request: NextRequest) {
       id: project.id,
       name: project.name,
       domain: project.domain,
+      default_region: project.default_region,
       tenantId: project.tenant_id,
       tenantName: project.tenant.name,
       createdAt: project.created_at,

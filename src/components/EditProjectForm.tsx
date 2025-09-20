@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
+import RegionSelector, { regionSchema, type Region } from './ui/RegionSelector';
 
 // Form validation schema
 const editProjectSchema = z.object({
   name: z.string().min(1, 'Project name is required').max(255, 'Project name must be less than 255 characters').trim(),
   domain: z.string().max(255, 'Domain must be less than 255 characters').trim().optional().or(z.literal('')),
+  default_region: regionSchema,
 });
 
 type EditProjectData = z.infer<typeof editProjectSchema>;
@@ -15,6 +17,7 @@ interface Project {
   id: string;
   name: string;
   domain: string | null;
+  default_region: Region;
   tenantId: string;
   tenantName: string;
   createdAt: string;
@@ -32,6 +35,7 @@ export default function EditProjectForm({ project, isOpen, onProjectUpdated, onC
   const [formData, setFormData] = useState<EditProjectData>({
     name: project.name,
     domain: project.domain || '',
+    default_region: project.default_region,
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof EditProjectData, string>>>({});
@@ -44,6 +48,7 @@ export default function EditProjectForm({ project, isOpen, onProjectUpdated, onC
       setFormData({
         name: project.name,
         domain: project.domain || '',
+        default_region: project.default_region,
       });
       setErrors({});
       setSubmitError(null);
@@ -62,6 +67,21 @@ export default function EditProjectForm({ project, isOpen, onProjectUpdated, onC
       setErrors(prev => ({
         ...prev,
         [name]: undefined
+      }));
+    }
+  };
+
+  const handleRegionChange = (region: Region) => {
+    setFormData(prev => ({
+      ...prev,
+      default_region: region
+    }));
+
+    // Clear error for region field when user changes selection
+    if (errors.default_region) {
+      setErrors(prev => ({
+        ...prev,
+        default_region: undefined
       }));
     }
   };
@@ -99,6 +119,7 @@ export default function EditProjectForm({ project, isOpen, onProjectUpdated, onC
       const requestData = {
         name: formData.name,
         domain: formData.domain || null,
+        default_region: formData.default_region,
       };
 
       const response = await fetch(`/api/v1/projects/${project.id}`, {
@@ -128,6 +149,7 @@ export default function EditProjectForm({ project, isOpen, onProjectUpdated, onC
     setFormData({
       name: project.name,
       domain: project.domain || '',
+      default_region: project.default_region,
     });
     setErrors({});
     setSubmitError(null);
@@ -191,6 +213,14 @@ export default function EditProjectForm({ project, isOpen, onProjectUpdated, onC
               <p className="mt-1 text-sm text-red-600">{errors.domain}</p>
             )}
           </div>
+
+          <RegionSelector
+            value={formData.default_region}
+            onChange={handleRegionChange}
+            error={errors.default_region}
+            label="Default Geographic Region"
+            required={true}
+          />
 
           {submitError && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-md">
