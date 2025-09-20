@@ -58,12 +58,15 @@ export class CSVParser {
     let data: Record<string, string | number | boolean>[] = [];
     let headers: string[] = [];
 
+    // Read file content as text first for Node.js compatibility
+    const fileText = await file.text();
+
     return new Promise((resolve, reject) => {
       let rowCount = 0;
       let processedRows = 0;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Papa.parse(file as any, {
+      // Parse string content instead of File object for Node.js compatibility
+      Papa.parse(fileText, {
         header: true,
         skipEmptyLines: this.options.skipEmptyLines,
         transformHeader: this.options.trimHeaders ? (header: string) => header.trim() : undefined,
