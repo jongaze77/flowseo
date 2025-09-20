@@ -201,8 +201,8 @@ export default function KeywordDataTable({
         const toolSources: Array<{source: string, value: number | string}> = [];
 
         // Semrush volume
-        if (toolData.semrush_volume !== undefined) {
-          toolSources.push({source: 'Semrush', value: toolData.semrush_volume});
+        if (toolData.semrush_searchVolume !== undefined) {
+          toolSources.push({source: 'Semrush', value: toolData.semrush_searchVolume});
         }
 
         // Ahrefs volume
