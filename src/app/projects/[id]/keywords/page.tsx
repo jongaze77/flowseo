@@ -7,6 +7,8 @@ import KeywordGenerationTrigger from '../../../../components/KeywordGenerationTr
 import KeywordList from '../../../../components/KeywordList';
 import ErrorModal from '../../../../components/ui/ErrorModal';
 import SequentialWorkflowNavigation from '../../../../components/SequentialWorkflowNavigation';
+import CSVUploadForm from '../../../../components/CSVUploadForm';
+import ImportResults from '../../../../components/ImportResults';
 
 interface Project {
   id: string;
@@ -87,6 +89,11 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Import state
+  const [showImportForm, setShowImportForm] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
+  const [showImportResults, setShowImportResults] = useState(false);
 
   // Resolve params
   useEffect(() => {
@@ -279,6 +286,32 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
     setSelectedRegion(region);
   }, []);
 
+  // Handle CSV import completion
+  const handleImportComplete = useCallback((result: any) => {
+    setImportResult(result);
+    setShowImportResults(true);
+    setShowImportForm(false);
+
+    // Refresh keyword lists to show imported keywords
+    if (projectId) {
+      fetchKeywordLists(projectId, currentPage, searchTerm, selectedPageId);
+    }
+  }, [projectId, currentPage, searchTerm, selectedPageId, fetchKeywordLists]);
+
+  // Handle import start (for progress tracking)
+  const handleImportStart = useCallback((importId: string) => {
+    console.log('Import started with ID:', importId);
+  }, []);
+
+  // Handle viewing imported keywords
+  const handleViewImportedKeywords = useCallback(() => {
+    setShowImportResults(false);
+    // Scroll to keywords section or trigger a refresh
+    if (projectId) {
+      fetchKeywordLists(projectId, currentPage, searchTerm, selectedPageId);
+    }
+  }, [projectId, currentPage, searchTerm, selectedPageId, fetchKeywordLists]);
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -358,7 +391,18 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
 
         {/* Page Selection and Keyword Generation Section */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Generate Keywords</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Generate Keywords</h2>
+            <button
+              onClick={() => setShowImportForm(!showImportForm)}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium flex items-center"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+              </svg>
+              {showImportForm ? 'Hide CSV Import' : 'Import from CSV'}
+            </button>
+          </div>
 
           {/* Page Selection */}
           <div className="mb-6">
@@ -397,7 +441,7 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
           </div>
 
           {/* Keyword Generation Form */}
-          {selectedPageId && selectedPage && (
+          {selectedPageId && selectedPage && !showImportForm && (
             <KeywordGenerationTrigger
               projectId={projectId}
               pageId={selectedPageId}
@@ -405,6 +449,18 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
               onKeywordsGenerated={handleKeywordsGenerated}
               disabled={!selectedPageId}
             />
+          )}
+
+          {/* CSV Import Form */}
+          {showImportForm && (
+            <div className="mt-6">
+              <CSVUploadForm
+                projectId={projectId}
+                onImportComplete={handleImportComplete}
+                onImportStart={handleImportStart}
+                className="border-2 border-green-200 bg-green-50"
+              />
+            </div>
           )}
         </div>
 
@@ -497,6 +553,20 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
           )}
         </div>
       </div>
+
+      {/* Import Results Modal */}
+      {showImportResults && importResult && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="max-w-4xl w-full max-h-screen overflow-y-auto">
+            <ImportResults
+              result={importResult}
+              onClose={() => setShowImportResults(false)}
+              onViewKeywords={handleViewImportedKeywords}
+              className="bg-white"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Error Modal */}
       <ErrorModal
