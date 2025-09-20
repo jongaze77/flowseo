@@ -46,6 +46,7 @@ model Project {
   name      String   @db.VarChar(255)
   domain    String?  @db.VarChar(255)
   tenant_id String   @db.Uuid
+  default_region String @default("UK") @db.VarChar(5)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -65,6 +66,7 @@ model Page {
   title      String?  @db.VarChar(500)
   content    String   @db.Text
   project_id String   @db.Uuid
+  analysis_status Json?
   created_at DateTime @default(now())
 
   // Relations
@@ -96,6 +98,7 @@ model KeywordList {
   project_id  String   @db.Uuid
   page_id     String?  @db.Uuid
   name        String   @db.VarChar(255)
+  region      String?  @db.VarChar(5)
   generated_at DateTime @default(now())
   created_at  DateTime @default(now())
 
@@ -113,6 +116,8 @@ model Keyword {
   text            String   @db.VarChar(255)
   search_volume   Int?
   difficulty      Float?
+  region          String?  @db.VarChar(5)
+  external_tool_data Json?
   created_at      DateTime @default(now())
 
   // Relations
