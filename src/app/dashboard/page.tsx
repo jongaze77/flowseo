@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import AppLayout from '../../components/layout/AppLayout';
 
 export default function DashboardPage() {
@@ -24,12 +25,12 @@ export default function DashboardPage() {
           <div className="bg-white p-6 rounded-lg shadow border">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Projects</h3>
             <p className="text-gray-600 text-sm mb-4">View and manage your SEO projects</p>
-            <a
+            <Link
               href="/projects"
               className="px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-900 rounded border border-blue-300 cursor-pointer transition-colors inline-block"
             >
               Manage Projects →
-            </a>
+            </Link>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow border">

@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     // Handle default prompt logic - if this prompt is being set as default,
     // remove default from other prompts of the same type
     if (validatedData.promptConfig.isDefault) {
-      const whereClause: any = {
+      const whereClause: { tenant_id: string; prompt_type: string; id?: { not: string } } = {
         tenant_id: user.tenant_id,
         prompt_type: validatedData.promptConfig.promptType,
       };

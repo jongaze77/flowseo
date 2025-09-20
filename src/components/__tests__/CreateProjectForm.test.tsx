@@ -73,6 +73,7 @@ describe('CreateProjectForm', () => {
         body: JSON.stringify({
           name: 'Test Project',
           domain: 'example.com',
+          default_region: 'UK',
         }),
       });
     });

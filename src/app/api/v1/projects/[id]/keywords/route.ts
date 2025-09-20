@@ -7,13 +7,13 @@ const prisma = new PrismaClient();
 
 // Query parameters validation schema
 const keywordListQuerySchema = z.object({
-  page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(20),
+  page: z.string().nullish().transform(val => val ? parseInt(val, 10) : 1).pipe(z.number().min(1)),
+  limit: z.string().nullish().transform(val => val ? parseInt(val, 10) : 20).pipe(z.number().min(1).max(100)),
   search: z.string().nullish().transform(val => val || undefined),
   pageId: z.string().nullish().transform(val => val || undefined).refine(val => !val || z.string().uuid().safeParse(val).success, "Invalid page ID format"), // Filter by specific page
-  region: z.enum(['UK', 'US', 'AU', 'CA']).nullish().transform(val => val || undefined), // Filter by region
-  sortBy: z.enum(['created_at', 'name', 'generated_at']).default('created_at'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  region: z.string().nullish().transform(val => val || undefined).refine(val => !val || ['UK', 'US', 'AU', 'CA'].includes(val), "Invalid region"), // Filter by region
+  sortBy: z.string().nullish().transform(val => val || 'created_at').refine(val => ['created_at', 'name', 'generated_at'].includes(val), "Invalid sortBy"),
+  sortOrder: z.string().nullish().transform(val => val || 'desc').refine(val => ['asc', 'desc'].includes(val), "Invalid sortOrder"),
 });
 
 // Helper function to get authenticated user from request
