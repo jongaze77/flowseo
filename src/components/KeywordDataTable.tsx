@@ -130,22 +130,53 @@ export default function KeywordDataTable({
   };
 
   const getCompetition = (keyword: Keyword): string => {
-    if (keyword.external_tool_data?.standardMetrics.competition !== undefined) {
+    const toolData = keyword.external_tool_data || {};
+
+    // Check for Google Keyword Planner competition data
+    if (toolData.google_keyword_planner_competition !== undefined) {
+      return String(toolData.google_keyword_planner_competition);
+    }
+
+    // Check for competition index
+    if (toolData.google_keyword_planner_competitionIndex !== undefined) {
+      const index = Number(toolData.google_keyword_planner_competitionIndex);
+      if (index <= 0.33) return 'LOW';
+      if (index <= 0.66) return 'MEDIUM';
+      return 'HIGH';
+    }
+
+    // Fallback to standardMetrics if it exists
+    if (toolData.standardMetrics?.competition !== undefined) {
       return ExternalToolDataMapper.formatMetricValue(
         'competition',
-        keyword.external_tool_data.standardMetrics.competition
+        toolData.standardMetrics.competition
       );
     }
+
     return 'N/A';
   };
 
   const getCPC = (keyword: Keyword): string => {
-    if (keyword.external_tool_data?.standardMetrics.cpc !== undefined) {
-      return ExternalToolDataMapper.formatMetricValue(
-        'cpc',
-        keyword.external_tool_data.standardMetrics.cpc
-      );
+    const toolData = keyword.external_tool_data || {};
+
+    // Check for various CPC data sources
+    if (toolData.semrush_cpc !== undefined) {
+      return ExternalToolDataMapper.formatMetricValue('cpc', toolData.semrush_cpc);
     }
+
+    if (toolData.ahrefs_cpc !== undefined) {
+      return ExternalToolDataMapper.formatMetricValue('cpc', toolData.ahrefs_cpc);
+    }
+
+    if (toolData.google_keyword_planner_topBidLow !== undefined) {
+      return ExternalToolDataMapper.formatMetricValue('cpc', toolData.google_keyword_planner_topBidLow);
+    }
+
+    // Fallback to standardMetrics if it exists
+    if (toolData.standardMetrics?.cpc !== undefined) {
+      return ExternalToolDataMapper.formatMetricValue('cpc', toolData.standardMetrics.cpc);
+    }
+
     return 'N/A';
   };
 
