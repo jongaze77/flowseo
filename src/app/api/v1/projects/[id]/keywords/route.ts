@@ -11,6 +11,7 @@ const keywordListQuerySchema = z.object({
   limit: z.coerce.number().min(1).max(100).default(20),
   search: z.string().nullish().transform(val => val || undefined),
   pageId: z.string().nullish().transform(val => val || undefined).refine(val => !val || z.string().uuid().safeParse(val).success, "Invalid page ID format"), // Filter by specific page
+  region: z.enum(['UK', 'US', 'AU', 'CA']).nullish().transform(val => val || undefined), // Filter by region
   sortBy: z.enum(['created_at', 'name', 'generated_at']).default('created_at'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
@@ -87,16 +88,18 @@ export async function GET(
       limit: searchParams.get('limit'),
       search: searchParams.get('search'),
       pageId: searchParams.get('pageId'),
+      region: searchParams.get('region'),
       sortBy: searchParams.get('sortBy'),
       sortOrder: searchParams.get('sortOrder'),
     };
 
     const validatedQuery = keywordListQuerySchema.parse(queryParams);
 
-    // Build where clause for search and page filtering
+    // Build where clause for search, page, and region filtering
     const whereClause: {
       project_id: string;
       page_id?: string;
+      region?: string;
       name?: {
         contains: string;
         mode: 'insensitive';
@@ -107,6 +110,10 @@ export async function GET(
 
     if (validatedQuery.pageId) {
       whereClause.page_id = validatedQuery.pageId;
+    }
+
+    if (validatedQuery.region) {
+      whereClause.region = validatedQuery.region;
     }
 
     if (validatedQuery.search) {
@@ -134,6 +141,8 @@ export async function GET(
               text: true,
               search_volume: true,
               difficulty: true,
+              region: true,
+              external_tool_data: true,
               created_at: true,
             },
             orderBy: {

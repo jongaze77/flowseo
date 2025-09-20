@@ -38,6 +38,7 @@ export const keywordGenerationRequestSchema = z.object({
   content: z.string().min(1, "Content is required for keyword generation"),
   promptText: z.string().min(1, "Prompt text is required"),
   targetCount: z.number().min(1).max(200).default(100),
+  region: z.enum(['UK', 'US', 'AU', 'CA']).optional(),
   aiConfig: aiModelConfigSchema,
 });
 
@@ -70,14 +71,14 @@ const AI_SERVICE_CONFIG = {
 // Default prompt template for keyword generation (optimized version)
 export const DEFAULT_KEYWORD_PROMPT = `You are an expert SEO keyword researcher.
 
-Task: Analyze the provided content and return exactly {{targetCount}} SEO keywords.
+Task: Analyze the provided content and return exactly {{targetCount}} SEO keywords{{regionContext}}.
 
 Guidelines:
 1. Base keywords on the main topics, entities, and concepts in the content.
 2. Mix short-tail (1–2 words) and long-tail (3+ words).
 3. Prioritize keywords with commercial/search intent.
 4. Avoid generic or irrelevant terms.
-5. Include relevant semantic variations.
+5. Include relevant semantic variations.{{regionGuidelines}}
 
 Output format:
 Return ONLY valid JSON in this array form:
@@ -120,7 +121,12 @@ export class AIService {
       }
 
       // Prepare prompt
-      const prompt = this.preparePrompt(validatedRequest.promptText, validatedRequest.content, validatedRequest.targetCount);
+      const prompt = this.preparePrompt(
+        validatedRequest.promptText,
+        validatedRequest.content,
+        validatedRequest.targetCount,
+        validatedRequest.region
+      );
 
       // Generate keywords based on provider
       let aiResponse: AIServiceResponse;
@@ -161,10 +167,29 @@ export class AIService {
   /**
    * Prepare prompt with template substitution
    */
-  private preparePrompt(promptTemplate: string, content: string, targetCount: number): string {
+  private preparePrompt(promptTemplate: string, content: string, targetCount: number, region?: string): string {
+    // Prepare region-specific context
+    const regionContext = region ? ` for the ${this.getRegionName(region)} market` : '';
+    const regionGuidelines = region ? `\n6. Focus on search terms and language patterns commonly used in ${this.getRegionName(region)}.` : '';
+
     return promptTemplate
       .replace(/\{\{content\}\}/g, content.substring(0, AI_SERVICE_CONFIG.maxContentLength))
-      .replace(/\{\{targetCount\}\}/g, targetCount.toString());
+      .replace(/\{\{targetCount\}\}/g, targetCount.toString())
+      .replace(/\{\{regionContext\}\}/g, regionContext)
+      .replace(/\{\{regionGuidelines\}\}/g, regionGuidelines);
+  }
+
+  /**
+   * Get region display name
+   */
+  private getRegionName(regionCode: string): string {
+    const regionNames: Record<string, string> = {
+      'UK': 'United Kingdom',
+      'US': 'United States',
+      'AU': 'Australia',
+      'CA': 'Canada'
+    };
+    return regionNames[regionCode] || regionCode;
   }
 
   /**

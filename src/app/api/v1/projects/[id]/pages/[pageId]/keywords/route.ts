@@ -139,11 +139,15 @@ export async function POST(
       );
     }
 
+    // Get region from request body (with fallback to project default)
+    const region = body.region || project.default_region;
+
     // Prepare AI service request with actual API key
     const aiRequest = {
       content: page.content,
       promptText: validatedData.promptText,
       targetCount: validatedData.targetCount,
+      region: region,
       aiConfig: {
         ...validatedData.aiConfig,
         apiKey: providerConfig.apiKey, // Use actual API key from database
@@ -175,9 +179,6 @@ export async function POST(
         { status: 500 }
       );
     }
-
-    // Get region from request body (with fallback to project default)
-    const region = body.region || project.default_region;
 
     // Save keyword list to database
     const keywordList = await prisma.keywordList.create({
