@@ -197,25 +197,37 @@ export default function KeywordDataTable({
         const toolData = keyword.external_tool_data || {};
         const volumes: Array<{source: string, value: number | string}> = [];
 
-        // Main search volume
-        if (value !== null && value !== undefined) {
-          volumes.push({source: 'Base', value: value as number});
-        }
+        // Collect tool-specific volumes first
+        const toolSources: Array<{source: string, value: number | string}> = [];
 
         // Semrush volume
         if (toolData.semrush_volume !== undefined) {
-          volumes.push({source: 'Semrush', value: toolData.semrush_volume});
+          toolSources.push({source: 'Semrush', value: toolData.semrush_volume});
         }
 
         // Ahrefs volume
         if (toolData.ahrefs_searchVolume !== undefined) {
-          volumes.push({source: 'Ahrefs', value: toolData.ahrefs_searchVolume});
+          toolSources.push({source: 'Ahrefs', value: toolData.ahrefs_searchVolume});
         }
 
         // Google Keyword Planner volume
         if (toolData.google_keyword_planner_searchVolume !== undefined) {
-          volumes.push({source: 'GKP', value: toolData.google_keyword_planner_searchVolume});
+          toolSources.push({source: 'GKP', value: toolData.google_keyword_planner_searchVolume});
         }
+
+        // Main search volume - only add if it's different from tool sources or if no tool sources exist
+        if (value !== null && value !== undefined) {
+          const baseValue = value as number;
+          const matchingToolSource = toolSources.find(ts => Number(ts.value) === baseValue);
+
+          if (!matchingToolSource) {
+            // Base value is different from all tool sources, so include it
+            volumes.push({source: 'Base', value: baseValue});
+          }
+        }
+
+        // Add all tool sources
+        volumes.push(...toolSources);
 
         if (volumes.length === 0) {
           return <span className="text-gray-400">-</span>;
@@ -252,25 +264,37 @@ export default function KeywordDataTable({
         const toolData = keyword.external_tool_data || {};
         const difficulties: Array<{source: string, value: number}> = [];
 
-        // Main difficulty
-        if (value !== null && value !== undefined && typeof value === 'number') {
-          difficulties.push({source: 'Base', value: value});
-        }
+        // Collect tool-specific difficulties first
+        const toolSources: Array<{source: string, value: number}> = [];
 
         // Semrush difficulty
         if (toolData.semrush_difficulty !== undefined && typeof toolData.semrush_difficulty === 'number') {
-          difficulties.push({source: 'Semrush', value: toolData.semrush_difficulty});
+          toolSources.push({source: 'Semrush', value: toolData.semrush_difficulty});
         }
 
         // Ahrefs difficulty
         if (toolData.ahrefs_difficulty !== undefined && typeof toolData.ahrefs_difficulty === 'number') {
-          difficulties.push({source: 'Ahrefs', value: toolData.ahrefs_difficulty});
+          toolSources.push({source: 'Ahrefs', value: toolData.ahrefs_difficulty});
         }
 
         // Google Keyword Planner competition
         if (toolData.google_keyword_planner_competitionIndex !== undefined && typeof toolData.google_keyword_planner_competitionIndex === 'number') {
-          difficulties.push({source: 'GKP', value: Math.round(toolData.google_keyword_planner_competitionIndex * 100)});
+          toolSources.push({source: 'GKP', value: Math.round(toolData.google_keyword_planner_competitionIndex * 100)});
         }
+
+        // Main difficulty - only add if it's different from tool sources or if no tool sources exist
+        if (value !== null && value !== undefined && typeof value === 'number') {
+          const baseValue = value;
+          const matchingToolSource = toolSources.find(ts => ts.value === baseValue);
+
+          if (!matchingToolSource) {
+            // Base value is different from all tool sources, so include it
+            difficulties.push({source: 'Base', value: baseValue});
+          }
+        }
+
+        // Add all tool sources
+        difficulties.push(...toolSources);
 
         if (difficulties.length === 0) {
           return <span className="text-gray-400">-</span>;

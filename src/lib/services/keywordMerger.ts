@@ -213,15 +213,24 @@ export class KeywordMerger {
       }
     }
 
-    // Update main fields when existing values are empty and imported values exist
+    // Store tool-specific data in external tool data instead of overwriting main fields
+    // Only update main fields if they're completely empty
     if ((merged.searchVolume === null || merged.searchVolume === undefined) && imported.searchVolume !== undefined) {
       merged.searchVolume = imported.searchVolume;
-      changes.push(`Set search volume to ${imported.searchVolume}`);
+      changes.push(`Set search volume to ${imported.searchVolume} from ${toolSource}`);
     }
 
     if ((merged.difficulty === null || merged.difficulty === undefined) && imported.difficulty !== undefined) {
       merged.difficulty = imported.difficulty;
-      changes.push(`Set difficulty to ${imported.difficulty}`);
+      changes.push(`Set difficulty to ${imported.difficulty} from ${toolSource}`);
+    }
+
+    // Always store tool-specific search volume and difficulty
+    if (imported.searchVolume !== undefined) {
+      merged.externalToolData[`${toolSource}_searchVolume`] = imported.searchVolume;
+    }
+    if (imported.difficulty !== undefined) {
+      merged.externalToolData[`${toolSource}_difficulty`] = imported.difficulty;
     }
 
     // Always merge external tool data if no conflicts
@@ -333,16 +342,27 @@ export class KeywordMerger {
   }
 
   private createNewKeyword(imported: MappedKeywordData, toolSource: ExternalTool): NewKeyword {
+    const externalToolData: Record<string, string | number | boolean> = {
+      ...imported.externalToolData,
+      import_source: toolSource,
+      last_import_source: toolSource,
+      import_timestamp: new Date().toISOString()
+    };
+
+    // Store tool-specific search volume and difficulty
+    if (imported.searchVolume !== undefined) {
+      externalToolData[`${toolSource}_searchVolume`] = imported.searchVolume;
+    }
+    if (imported.difficulty !== undefined) {
+      externalToolData[`${toolSource}_difficulty`] = imported.difficulty;
+    }
+
     return {
       text: imported.keyword.trim(),
       searchVolume: imported.searchVolume,
       difficulty: imported.difficulty,
       region: imported.region || this.options.projectRegion,
-      externalToolData: {
-        ...imported.externalToolData,
-        import_source: toolSource,
-        import_timestamp: new Date().toISOString()
-      },
+      externalToolData,
       toolSource
     };
   }

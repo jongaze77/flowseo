@@ -61,12 +61,15 @@ export class CSVParser {
     // Read file content as text first for Node.js compatibility
     const fileText = await file.text();
 
+    // Preprocess file content to handle Google Keyword Planner metadata headers
+    const processedText = this.preprocessCSVContent(fileText);
+
     return new Promise((resolve, reject) => {
       let rowCount = 0;
       let processedRows = 0;
 
       // Parse string content instead of File object for Node.js compatibility
-      Papa.parse(fileText, {
+      Papa.parse(processedText, {
         header: true,
         skipEmptyLines: this.options.skipEmptyLines,
         transformHeader: this.options.trimHeaders ? (header: string) => header.trim() : undefined,
@@ -153,6 +156,40 @@ export class CSVParser {
     // Accept if it has CSV extension OR proper CSV MIME type
     // This will reject test.txt with text/plain since it has neither
     return hasCSVExtension || hasCSVType;
+  }
+
+  private preprocessCSVContent(content: string): string {
+    // First, clean UTF-16 encoding artifacts from the entire content
+    const cleanedContent = content.replace(/\x00/g, '');
+    const lines = cleanedContent.split('\n');
+
+    // Detect Google Keyword Planner format by checking for metadata lines
+    // Google exports typically have:
+    // Line 1: Title with timestamp (e.g., "Keyword Stats 2025-09-20 at 03_40_46")
+    // Line 2: Date range (e.g., "1 September 2024 - 31 August 2025")
+    // Line 3: Actual CSV headers starting with "Keyword"
+
+    if (lines.length >= 3) {
+      const firstLine = lines[0].trim();
+      const secondLine = lines[1].trim();
+      const thirdLine = lines[2].trim();
+
+      // Check if this looks like Google Keyword Planner format
+      const isGoogleFormat = (
+        firstLine.includes('Keyword Stats') ||
+        firstLine.includes('at ') ||
+        (secondLine.includes(' - ') && (secondLine.includes('2024') || secondLine.includes('2025'))) ||
+        thirdLine.toLowerCase().startsWith('keyword')
+      );
+
+      if (isGoogleFormat) {
+        // Skip the first two metadata lines and return the rest
+        return lines.slice(2).join('\n');
+      }
+    }
+
+    // If not Google format, return cleaned content anyway to handle UTF-16 encoding
+    return cleanedContent;
   }
 
   private processChunkData(
