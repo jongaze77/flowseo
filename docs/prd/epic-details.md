@@ -1,16 +1,18 @@
 # Epic Details
 
-**Epic 1: Account Management & Project Foundation**
+**Epic 1: Account Management & Project Foundation** ✅ **COMPLETE**
 * **Epic Goal**: To establish the core user and tenant management system and the foundational project structure, enabling secure, collaborative, and multi-tenant functionality.
-* **Story 1.1: User and Tenant Registration**: As a new user, I want to be able to register an account and create a tenant for my team so that I can begin using the application with my team.
-* **Story 1.2: User Invitation and Management**: As a tenant administrator, I want to be able to invite and manage users within my tenant so that I can control access to my projects.
-* **Story 1.3: Project Creation and Management**: As a user, I want to be able to create, name, and manage multiple projects so that I can organize my work and keep data sets separate for different clients.
+* **Story 1.1: User and Tenant Registration** ✅ Done: As a new user, I want to be able to register an account and create a tenant for my team so that I can begin using the application with my team.
+* **Story 1.2: Basic App Foundation with User Management (MVP)** ✅ Done: As a tenant owner, I want a basic dashboard with navigation to manage my team, so that I can access user management and other tenant features after registration.
+* **Story 1.2.5: Basic Authentication System** ✅ Done: As a registered user, I want to log in to my account and maintain my session, so that I can access my tenant's features and manage users securely.
+* **Story 1.3: Project Creation and Management** ✅ Done: As a user, I want to be able to create, name, and manage multiple projects so that I can organize my work and keep data sets separate for different clients.
 
-**Epic 2: Core Workflow & Data Ingestion**
+**Epic 2: Core Workflow & Data Ingestion** ✅ **COMPLETE**
 * **Epic Goal**: To build the initial stages of the keyword research workflow, enabling the ingestion of data from web pages and external tools to provide the first set of keywords for analysis.
-* **Story 2.1: Webpage Content Ingestion**: As a user, I want to be able to either input a URL to scrape a web page or paste HTML/markdown content so that I can get my research started with content I have.
-* **Story 2.2: AI-Powered Keyword Generation**: As a user, I want to be able to use a custom AI model and prompt to generate an initial list of 100 potential keywords from the ingested content so that I can have a great starting point for my research.
-* **Story 2.3: Manual Data Import**: As a user, I want to be able to import CSV data from external tools like Semrush into a project so that I can merge my data with the initial keyword list.
+* **Story 2.1: Webpage Content Ingestion** ✅ Done: As a user, I want to be able to either input a URL to scrape a web page or paste HTML/markdown content so that I can get my research started with content I have.
+* **Story 2.2: AI-Powered Keyword Generation** ✅ Done: As a user, I want to be able to use a custom AI model and prompt to generate an initial list of 100 potential keywords from the ingested content so that I can have a great starting point for my research.
+* **Story 2.2.5: Sequential Workflow UI Redesign with Geographic Regions** ✅ Done: As a user, I want a sequential page-by-page workflow with geographic region support and proper data table interface for keywords, so that I can process my content systematically with accurate regional SEO data.
+* **Story 2.3: Manual Data Import with Geographic Region Support** ✅ Ready for Review: As a user, I want to be able to import CSV data from external tools like Semrush, Ahrefs, and Google Keyword Planner into a project, so that I can merge external keyword data with my AI-generated keywords and enrich them with search volumes, difficulty, and competition metrics.
 
 **Epic 3: Keyword Refinement & Analysis**
 * **Epic Goal**: To develop the interactive interface for refining and analyzing keyword data, enabling the user to curate the best keywords and save their research progress.
