@@ -320,151 +320,145 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Keyword Generation */}
-          <div className="lg:col-span-1">
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Generate Keywords</h2>
+        {/* Page Selection and Keyword Generation Section */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Generate Keywords</h2>
 
-              {/* Page Selection */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Page to Analyze
-                </label>
-                {isPagesLoading ? (
-                  <div className="text-sm text-gray-500">Loading pages...</div>
-                ) : pages.length === 0 ? (
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <p className="text-sm text-yellow-800">
-                      No pages found. Please{' '}
-                      <button
-                        onClick={() => router.push(`/projects/${projectId}/content`)}
-                        className="underline hover:no-underline"
-                      >
-                        add content
-                      </button>{' '}
-                      first.
-                    </p>
-                  </div>
-                ) : (
-                  <select
-                    value={selectedPageId}
-                    onChange={(e) => setSelectedPageId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          {/* Page Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Page to Analyze
+            </label>
+            {isPagesLoading ? (
+              <div className="text-sm text-gray-500">Loading pages...</div>
+            ) : pages.length === 0 ? (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-sm text-yellow-800">
+                  No pages found. Please{' '}
+                  <button
+                    onClick={() => router.push(`/projects/${projectId}/content`)}
+                    className="underline hover:no-underline"
                   >
-                    <option value="">Select a page</option>
-                    {pages.map(page => (
-                      <option key={page.id} value={page.id}>
-                        {page.title || 'Untitled Page'} {page.url && `(${page.url})`}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                    add content
+                  </button>{' '}
+                  first.
+                </p>
               </div>
+            ) : (
+              <select
+                value={selectedPageId}
+                onChange={(e) => setSelectedPageId(e.target.value)}
+                className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select a page</option>
+                {pages.map(page => (
+                  <option key={page.id} value={page.id}>
+                    {page.title || 'Untitled Page'} {page.url && `(${page.url})`}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
 
-              {/* Keyword Generation Form */}
-              {selectedPageId && selectedPage && (
-                <KeywordGenerationTrigger
-                  projectId={projectId}
-                  pageId={selectedPageId}
-                  pageTitle={selectedPage.title || undefined}
-                  onKeywordsGenerated={handleKeywordsGenerated}
-                  disabled={!selectedPageId}
-                />
-              )}
+          {/* Keyword Generation Form */}
+          {selectedPageId && selectedPage && (
+            <KeywordGenerationTrigger
+              projectId={projectId}
+              pageId={selectedPageId}
+              pageTitle={selectedPage.title || undefined}
+              onKeywordsGenerated={handleKeywordsGenerated}
+              disabled={!selectedPageId}
+            />
+          )}
+        </div>
+
+        {/* Generated Keywords Section */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Generated Keywords</h2>
+
+            {/* Search */}
+            <div className="w-64">
+              <input
+                type="text"
+                placeholder="Search keyword lists..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
           </div>
 
-          {/* Right Column: Keyword Lists */}
-          <div className="lg:col-span-2">
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Generated Keywords</h2>
+          {/* Keyword Lists */}
+          {isKeywordListsLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : keywordLists.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+              <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Keywords Generated Yet</h3>
+              <p className="text-gray-600 mb-4">
+                Select a page and generate your first set of AI-powered keywords
+              </p>
+              {pages.length === 0 && (
+                <button
+                  onClick={() => router.push(`/projects/${projectId}/content`)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Add Content First
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {keywordLists.map(keywordList => (
+                <KeywordList
+                  key={keywordList.id}
+                  keywordList={keywordList}
+                  onDelete={handleKeywordListDelete}
+                  showActions={true}
+                />
+              ))}
 
-                {/* Search */}
-                <div className="w-64">
-                  <input
-                    type="text"
-                    placeholder="Search keyword lists..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center space-x-2 mt-6">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  >
+                    Previous
+                  </button>
 
-              {/* Keyword Lists */}
-              {isKeywordListsLoading ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-              ) : keywordLists.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                  <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Keywords Generated Yet</h3>
-                  <p className="text-gray-600 mb-4">
-                    Select a page and generate your first set of AI-powered keywords
-                  </p>
-                  {pages.length === 0 && (
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                     <button
-                      onClick={() => router.push(`/projects/${projectId}/content`)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-3 py-2 border rounded-md ${
+                        page === currentPage
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'border-gray-300 hover:bg-gray-50'
+                      }`}
                     >
-                      Add Content First
+                      {page}
                     </button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {keywordLists.map(keywordList => (
-                    <KeywordList
-                      key={keywordList.id}
-                      keywordList={keywordList}
-                      onDelete={handleKeywordListDelete}
-                      showActions={true}
-                    />
                   ))}
 
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex justify-center space-x-2 mt-6">
-                      <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="px-3 py-2 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                      >
-                        Previous
-                      </button>
-
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                        <button
-                          key={page}
-                          onClick={() => handlePageChange(page)}
-                          className={`px-3 py-2 border rounded-md ${
-                            page === currentPage
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      ))}
-
-                      <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="px-3 py-2 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  )}
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  >
+                    Next
+                  </button>
                 </div>
               )}
             </div>
-          </div>
+          )}
         </div>
       </div>
 
