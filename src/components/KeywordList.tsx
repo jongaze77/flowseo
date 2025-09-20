@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ErrorModal from './ui/ErrorModal';
 import ConfirmationModal from './ui/ConfirmationModal';
+import KeywordDataTable from './KeywordDataTable';
 
 interface Keyword {
   id: string;
@@ -32,18 +33,25 @@ interface KeywordListData {
 interface KeywordListProps {
   keywordList: KeywordListData;
   onDelete?: (keywordListId: string) => void;
+  onKeywordsSelected?: (keywords: Keyword[]) => void;
   showActions?: boolean;
   compact?: boolean;
+  defaultView?: 'cards' | 'table';
+  selectable?: boolean;
 }
 
 export default function KeywordList({
   keywordList,
   onDelete,
+  onKeywordsSelected,
   showActions = true,
-  compact = false
+  compact = false,
+  defaultView = 'table',
+  selectable = false
 }: KeywordListProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>(defaultView);
 
   // Modal states
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean }>({ isOpen: false });
@@ -165,6 +173,21 @@ export default function KeywordList({
     );
   }
 
+  // Render table view or cards view based on viewMode
+  if (viewMode === 'table') {
+    return (
+      <KeywordDataTable
+        keywordList={keywordList}
+        onDelete={onDelete}
+        onKeywordsSelected={onKeywordsSelected}
+        showActions={showActions}
+        selectable={selectable}
+        onViewModeChange={setViewMode}
+      />
+    );
+  }
+
+  // Cards view
   return (
     <div className="bg-white rounded-lg shadow-sm border">
       {/* Header */}
@@ -195,6 +218,26 @@ export default function KeywordList({
 
           {showActions && (
             <div className="flex space-x-2">
+              {/* View Toggle */}
+              <div className="flex bg-gray-100 rounded-md p-1">
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`px-2 py-1 text-xs rounded ${
+                    viewMode === 'cards'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Cards
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className="px-2 py-1 text-xs rounded text-gray-600 hover:text-gray-900"
+                >
+                  Table
+                </button>
+              </div>
+
               {/* Copy Dropdown */}
               <div className="relative group">
                 <button
