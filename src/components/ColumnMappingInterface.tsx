@@ -232,7 +232,7 @@ export default function ColumnMappingInterface({
       {/* Help Text */}
       <div className="mt-4 text-xs text-gray-500">
         <p>* Required fields must be mapped for the import to proceed.</p>
-        <p>Columns mapped to "Ignore" will not be imported.</p>
+        <p>Columns mapped to &quot;Ignore&quot; will not be imported.</p>
       </div>
     </div>
   );

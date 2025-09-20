@@ -28,7 +28,7 @@ interface ImportResult {
 interface ImportOptions {
   keywordListName?: string;
   detectTool: boolean;
-  tool?: 'semrush' | 'ahrefs' | 'google_keyword_planner';
+  tool?: 'semrush' | 'ahrefs' | 'google_keyword_planner' | 'unknown';
   conflictResolution: 'keep_existing' | 'use_imported' | 'manual';
   allowRegionMismatch: boolean;
 }
@@ -48,7 +48,7 @@ export default function CSVUploadForm({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadMessage, setUploadMessage] = useState('');
-  const [importId, setImportId] = useState<string | null>(null);
+  const [_importId, setImportId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileSelect = (file: File) => {
@@ -247,7 +247,7 @@ export default function CSVUploadForm({
                 value={importOptions.tool || ''}
                 onChange={(e) => setImportOptions({
                   ...importOptions,
-                  tool: e.target.value as any
+                  tool: e.target.value as 'semrush' | 'ahrefs' | 'google_keyword_planner' | 'unknown'
                 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               >
@@ -268,7 +268,7 @@ export default function CSVUploadForm({
               value={importOptions.conflictResolution}
               onChange={(e) => setImportOptions({
                 ...importOptions,
-                conflictResolution: e.target.value as any
+                conflictResolution: e.target.value as 'keep_existing' | 'use_imported' | 'manual'
               })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >

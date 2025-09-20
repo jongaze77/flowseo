@@ -5,7 +5,7 @@ export type ExternalTool = 'semrush' | 'ahrefs' | 'google_keyword_planner' | 'un
 export interface ColumnMapping {
   sourceColumn: string;
   targetField: string;
-  transform?: (value: any) => any;
+  transform?: (value: string | number) => string | number | boolean | undefined;
   required: boolean;
 }
 
@@ -39,7 +39,7 @@ export interface MappedKeywordData {
   searchVolume?: number;
   difficulty?: number;
   region?: string;
-  externalToolData: Record<string, any>;
+  externalToolData: Record<string, string | number | boolean>;
   toolSource: ExternalTool;
 }
 
@@ -115,7 +115,7 @@ const GOOGLE_KEYWORD_PLANNER_SCHEMA: ToolSchemaDefinition = {
 };
 
 // Transform functions
-function parseNumeric(value: any): number | undefined {
+function parseNumeric(value: string | number): number | undefined {
   if (value === null || value === undefined || value === '') return undefined;
 
   // Handle string values that might contain commas or other formatting
@@ -125,7 +125,7 @@ function parseNumeric(value: any): number | undefined {
   return isNaN(numeric) ? undefined : numeric;
 }
 
-function parseGoogleVolume(value: any): number | undefined {
+function parseGoogleVolume(value: string | number): number | undefined {
   if (value === null || value === undefined || value === '') return undefined;
 
   const stringValue = value.toString().toLowerCase();
@@ -339,7 +339,7 @@ export class ExternalToolMapper {
     };
   }
 
-  private getTransformFunction(targetField: string): ((value: any) => any) | undefined {
+  private getTransformFunction(targetField: string): ((value: string | number) => string | number | boolean | undefined) | undefined {
     switch (targetField) {
       case 'searchVolume':
       case 'difficulty':
@@ -359,18 +359,19 @@ export class ExternalToolMapper {
     }
   }
 
-  mapRowData(row: Record<string, any>, mappings: ColumnMapping[]): MappedKeywordData | null {
-    const mappedData: Record<string, any> = {};
-    const externalToolData: Record<string, any> = {};
+  mapRowData(row: Record<string, string>, mappings: ColumnMapping[]): MappedKeywordData | null {
+    const mappedData: Record<string, string | number | boolean> = {};
+    const externalToolData: Record<string, string | number | boolean> = {};
     let keyword = '';
 
     for (const mapping of mappings) {
       const sourceValue = row[mapping.sourceColumn];
-      let targetValue = sourceValue;
+      let targetValue: string | number | boolean = sourceValue;
 
       // Apply transformation if specified
       if (mapping.transform) {
-        targetValue = mapping.transform(sourceValue);
+        const transformedValue = mapping.transform(sourceValue);
+        targetValue = transformedValue !== undefined ? transformedValue : sourceValue;
       }
 
       // Map to standard fields or external tool data
@@ -397,8 +398,8 @@ export class ExternalToolMapper {
 
     return {
       keyword,
-      searchVolume: mappedData.searchVolume,
-      difficulty: mappedData.difficulty,
+      searchVolume: typeof mappedData.searchVolume === 'number' ? mappedData.searchVolume : undefined,
+      difficulty: typeof mappedData.difficulty === 'number' ? mappedData.difficulty : undefined,
       externalToolData,
       toolSource: 'unknown' // Will be set by the caller based on detected tool
     };
@@ -433,7 +434,8 @@ export class ExternalToolMapper {
             errors.push({
               column: field,
               row: rowNumber,
-              message: `Invalid ${field}: ${result.error.errors[0]?.message || 'validation failed'}`,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              message: `Invalid ${field}: ${(result.error as any).errors?.[0]?.message || 'validation failed'}`,
               type: 'validation_failed'
             });
           }

@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { MappedKeywordData, ExternalTool } from './externalToolMapper';
 
 export interface ExistingKeyword {
@@ -8,15 +7,15 @@ export interface ExistingKeyword {
   searchVolume?: number;
   difficulty?: number;
   region?: string;
-  externalToolData?: Record<string, any>;
+  externalToolData?: Record<string, string | number | boolean>;
   createdAt: Date;
 }
 
 export interface MergeConflict {
   keywordText: string;
   field: string;
-  existingValue: any;
-  importedValue: any;
+  existingValue: string | number | boolean;
+  importedValue: string | number | boolean;
   existingSource?: string;
   importedSource: ExternalTool;
   resolution?: 'keep_existing' | 'use_imported' | 'merge' | 'manual';
@@ -36,7 +35,7 @@ export interface MergedKeyword {
   searchVolume?: number;
   difficulty?: number;
   region?: string;
-  externalToolData: Record<string, any>;
+  externalToolData: Record<string, string | number | boolean>;
   changes: string[];
   conflictsResolved: number;
 }
@@ -46,7 +45,7 @@ export interface NewKeyword {
   searchVolume?: number;
   difficulty?: number;
   region: string;
-  externalToolData: Record<string, any>;
+  externalToolData: Record<string, string | number | boolean>;
   toolSource: ExternalTool;
 }
 
@@ -175,7 +174,7 @@ export class KeywordMerger {
       searchVolume: existing.searchVolume,
       difficulty: existing.difficulty,
       region: existing.region || this.options.projectRegion,
-      externalToolData: { ...existing.externalToolData } || {},
+      externalToolData: existing.externalToolData ? { ...existing.externalToolData } : {},
       changes: [],
       conflictsResolved: 0
     };
@@ -201,10 +200,11 @@ export class KeywordMerger {
         case 'merge':
           if (conflict.field === 'externalToolData') {
             // Merge external tool data
-            merged.externalToolData = {
-              ...merged.externalToolData,
-              [`${toolSource}_data`]: imported.externalToolData
-            };
+            merged.externalToolData = Object.assign(
+              {},
+              merged.externalToolData,
+              { [`${toolSource}_data`]: imported.externalToolData }
+            );
             changes.push(`Merged ${toolSource} data into external tool data`);
             merged.conflictsResolved++;
           }
@@ -217,10 +217,9 @@ export class KeywordMerger {
 
     // Always merge external tool data if no conflicts
     if (!conflicts.some(c => c.field === 'externalToolData')) {
-      merged.externalToolData = {
-        ...merged.externalToolData,
-        [`${toolSource}_data`]: imported.externalToolData
-      };
+      Object.assign(merged.externalToolData, {
+        [`${toolSource}_data`]: JSON.stringify(imported.externalToolData)
+      });
       changes.push(`Added ${toolSource} data`);
     }
 
@@ -284,7 +283,7 @@ export class KeywordMerger {
     return conflicts;
   }
 
-  private resolveConflict(conflict: MergeConflict): 'keep_existing' | 'use_imported' | 'merge' | 'manual' {
+  private resolveConflict(_conflict: MergeConflict): 'keep_existing' | 'use_imported' | 'merge' | 'manual' {
     if (!this.options.autoResolveConflicts) {
       return 'manual';
     }
@@ -302,23 +301,23 @@ export class KeywordMerger {
     }
   }
 
-  private applyImportedValue(merged: MergedKeyword, field: string, value: any): void {
+  private applyImportedValue(merged: MergedKeyword, field: string, value: string | number | boolean): void {
     switch (field) {
       case 'searchVolume':
-        merged.searchVolume = value;
+        merged.searchVolume = typeof value === 'number' ? value : undefined;
         break;
       case 'difficulty':
-        merged.difficulty = value;
+        merged.difficulty = typeof value === 'number' ? value : undefined;
         break;
       case 'region':
-        merged.region = value;
+        merged.region = typeof value === 'string' ? value : undefined;
         break;
     }
   }
 
   private getExistingSource(existing: ExistingKeyword): string {
     if (existing.externalToolData?.last_import_source) {
-      return existing.externalToolData.last_import_source;
+      return existing.externalToolData.last_import_source.toString();
     }
     return 'AI Generated';
   }
@@ -386,7 +385,7 @@ export class KeywordMerger {
   }
 
   // Utility method to generate merge audit trail
-  generateAuditTrail(result: MergeResult, toolSource: ExternalTool): Record<string, any> {
+  generateAuditTrail(result: MergeResult, toolSource: ExternalTool): Record<string, unknown> {
     return {
       timestamp: new Date().toISOString(),
       tool_source: toolSource,

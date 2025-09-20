@@ -92,7 +92,18 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
 
   // Import state
   const [showImportForm, setShowImportForm] = useState(false);
-  const [importResult, setImportResult] = useState<any>(null);
+  const [importResult, setImportResult] = useState<{
+    summary: {
+      totalImported: number;
+      totalNew: number;
+      totalMatched: number;
+      totalConflicts: number;
+      totalErrors: number;
+      regionValidated: boolean;
+    };
+    keywordListId: string;
+    keywordListName: string;
+  } | null>(null);
   const [showImportResults, setShowImportResults] = useState(false);
 
   // Resolve params
@@ -287,7 +298,18 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
   }, []);
 
   // Handle CSV import completion
-  const handleImportComplete = useCallback((result: any) => {
+  const handleImportComplete = useCallback((result: {
+    summary: {
+      totalImported: number;
+      totalNew: number;
+      totalMatched: number;
+      totalConflicts: number;
+      totalErrors: number;
+      regionValidated: boolean;
+    };
+    keywordListId: string;
+    keywordListName: string;
+  }) => {
     setImportResult(result);
     setShowImportResults(true);
     setShowImportForm(false);

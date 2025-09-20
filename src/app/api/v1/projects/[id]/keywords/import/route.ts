@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { verifyAndDecodeToken } from '../../../../../../../lib/auth/session';
 import { csvParser } from '../../../../../../../lib/services/csvParser';
 import { externalToolMapper } from '../../../../../../../lib/services/externalToolMapper';
-import { keywordMerger } from '../../../../../../../lib/services/keywordMerger';
+// import { keywordMerger } from '../../../../../../../lib/services/keywordMerger';
 
 const prisma = new PrismaClient();
 
@@ -14,14 +14,14 @@ const importRequestSchema = z.object({
   keywordListName: z.string().min(1).max(255).optional(),
   detectTool: z.boolean().default(true),
   tool: z.enum(['semrush', 'ahrefs', 'google_keyword_planner', 'unknown']).optional(),
-  columnMappings: z.record(z.string()).optional(),
+  columnMappings: z.record(z.string(), z.string()).optional(),
   conflictResolution: z.enum(['keep_existing', 'use_imported', 'manual']).default('manual'),
   allowRegionMismatch: z.boolean().default(false)
 });
 
-const importStatusSchema = z.object({
-  importId: z.string().uuid('Invalid import ID')
-});
+// const importStatusSchema = z.object({
+//   importId: z.string().uuid('Invalid import ID')
+// });
 
 // Helper function to get authenticated user from request
 async function getAuthenticatedUser(request: NextRequest) {
@@ -105,7 +105,7 @@ export async function POST(
     if (requestData) {
       try {
         parsedRequestData = JSON.parse(requestData);
-      } catch (error) {
+      } catch (_error) {
         return NextResponse.json({ error: 'Invalid request data format' }, { status: 400 });
       }
     }
@@ -122,7 +122,7 @@ export async function POST(
       file,
       project,
       validatedRequest,
-      userId: user.id
+      _userId: user.id
     }).catch(error => {
       console.error('Import processing error:', error);
       updateImportProgress(importId, 'failed', 0, undefined, undefined, error.message || 'Unknown import error');
@@ -222,13 +222,13 @@ async function processImport({
   file,
   project,
   validatedRequest,
-  userId
+  _userId
 }: {
   importId: string;
   file: File;
-  project: any;
+  project: { id: string; name: string; default_region: string; tenant_id: string };
   validatedRequest: z.infer<typeof importRequestSchema>;
-  userId: string;
+  _userId: string;
 }) {
   try {
     // Update progress: Parsing CSV
@@ -269,8 +269,15 @@ async function processImport({
 
     // Map CSV data to keyword format
     const mappedKeywords = csvResult.data
-      .map(row => externalToolMapper.mapRowData(row, mappingResult.mappings))
-      .filter(Boolean);
+      .map(row => {
+        // Convert mixed types to strings for external tool mapper
+        const stringRow: Record<string, string> = {};
+        Object.entries(row).forEach(([key, value]) => {
+          stringRow[key] = String(value);
+        });
+        return externalToolMapper.mapRowData(stringRow, mappingResult.mappings);
+      })
+      .filter((keyword): keyword is NonNullable<typeof keyword> => keyword !== null);
 
     if (mappedKeywords.length === 0) {
       throw new Error('No valid keywords found in CSV data');
@@ -309,10 +316,10 @@ async function processImport({
         id: keyword.id,
         keywordListId: keyword.keyword_list_id,
         text: keyword.text,
-        searchVolume: keyword.search_volume,
-        difficulty: keyword.difficulty,
-        region: keyword.region,
-        externalToolData: keyword.external_tool_data as Record<string, any> || {},
+        searchVolume: keyword.search_volume ?? undefined,
+        difficulty: keyword.difficulty ?? undefined,
+        region: keyword.region ?? undefined,
+        externalToolData: keyword.external_tool_data as Record<string, string | number | boolean> || {},
         createdAt: keyword.created_at
       }))
     );

@@ -11,6 +11,22 @@ jest.mock('papaparse', () => ({
 
 import Papa from 'papaparse';
 
+// Mock FileReader for Node.js environment
+global.FileReader = class MockFileReader {
+  result: any = null;
+  onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+
+  readAsArrayBuffer(file: Blob) {
+    // Simulate async behavior
+    setTimeout(() => {
+      this.result = new ArrayBuffer(8);
+      if (this.onload) {
+        this.onload.call(this, {} as ProgressEvent<FileReader>);
+      }
+    }, 0);
+  }
+} as any;
+
 describe('CSVParser', () => {
   let csvParser: CSVParser;
 
@@ -40,7 +56,7 @@ describe('CSVParser', () => {
         }
       };
 
-      Papa.parse.mockImplementation((file, options) => {
+      (Papa.parse as jest.Mock).mockImplementation((file, options) => {
         setTimeout(() => {
           options.complete(mockResults);
         }, 0);
@@ -89,7 +105,7 @@ describe('CSVParser', () => {
         }
       };
 
-      Papa.parse.mockImplementation((file, options) => {
+      (Papa.parse as jest.Mock).mockImplementation((file, options) => {
         setTimeout(() => {
           options.complete(mockResults);
         }, 0);
@@ -117,7 +133,7 @@ describe('CSVParser', () => {
         }
       };
 
-      Papa.parse.mockImplementation((file, options) => {
+      (Papa.parse as jest.Mock).mockImplementation((file, options) => {
         setTimeout(() => {
           options.chunk({
             data: mockResults.data,
@@ -147,7 +163,7 @@ describe('CSVParser', () => {
         }
       };
 
-      Papa.parse.mockImplementation((file, options) => {
+      (Papa.parse as jest.Mock).mockImplementation((file, options) => {
         setTimeout(() => {
           options.complete(mockResults);
         }, 0);
