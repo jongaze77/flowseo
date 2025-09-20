@@ -72,7 +72,7 @@ export class CSVParser {
         transformHeader: this.options.trimHeaders ? (header: string) => header.trim() : undefined,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         chunk: (results: any, parser: any) => {
-          if (results.errors.length > 0) {
+          if (results.errors && results.errors.length > 0) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             results.errors.forEach((error: any) => {
               errors.push({
@@ -108,7 +108,7 @@ export class CSVParser {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         complete: (results: any) => {
-          if (results.errors.length > 0) {
+          if (results.errors && results.errors.length > 0) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             results.errors.forEach((error: any) => {
               errors.push({
