@@ -94,10 +94,39 @@ export default function KeywordDataTable({
   };
 
   const getToolSource = (keyword: Keyword): string => {
-    if (keyword.external_tool_data?.source) {
-      return keyword.external_tool_data.source;
+    const toolData = keyword.external_tool_data || {};
+    const sources: string[] = [];
+
+    if (toolData.last_import_source) {
+      switch (toolData.last_import_source) {
+        case 'semrush':
+          sources.push(ToolSource.SEMRUSH);
+          break;
+        case 'ahrefs':
+          sources.push(ToolSource.AHREFS);
+          break;
+        case 'google_keyword_planner':
+          sources.push(ToolSource.KEYWORD_PLANNER);
+          break;
+      }
     }
-    return ToolSource.AI_GENERATED;
+
+    // Check for individual tool data
+    if (toolData.semrush_cpc !== undefined || toolData.semrush_intent !== undefined) {
+      if (!sources.includes(ToolSource.SEMRUSH)) sources.push(ToolSource.SEMRUSH);
+    }
+    if (toolData.ahrefs_cpc !== undefined || toolData.ahrefs_searchVolume !== undefined) {
+      if (!sources.includes(ToolSource.AHREFS)) sources.push(ToolSource.AHREFS);
+    }
+    if (toolData.google_keyword_planner_topBidLow !== undefined) {
+      if (!sources.includes(ToolSource.KEYWORD_PLANNER)) sources.push(ToolSource.KEYWORD_PLANNER);
+    }
+
+    if (sources.length === 0) {
+      return ToolSource.AI_GENERATED;
+    }
+
+    return sources.join(', ');
   };
 
   const getCompetition = (keyword: Keyword): string => {
@@ -134,12 +163,53 @@ export default function KeywordDataTable({
       title: 'Volume',
       sortable: true,
       render: (value: unknown, keyword: Keyword) => {
-        // Prefer external tool data over basic search_volume
-        const volume = keyword.external_tool_data?.standardMetrics.volume ?? value;
+        const toolData = keyword.external_tool_data || {};
+        const volumes: Array<{source: string, value: number | string}> = [];
+
+        // Main search volume
+        if (value !== null && value !== undefined) {
+          volumes.push({source: 'Base', value: value as number});
+        }
+
+        // Semrush volume
+        if (toolData.semrush_volume !== undefined) {
+          volumes.push({source: 'Semrush', value: toolData.semrush_volume});
+        }
+
+        // Ahrefs volume
+        if (toolData.ahrefs_searchVolume !== undefined) {
+          volumes.push({source: 'Ahrefs', value: toolData.ahrefs_searchVolume});
+        }
+
+        // Google Keyword Planner volume
+        if (toolData.google_keyword_planner_searchVolume !== undefined) {
+          volumes.push({source: 'GKP', value: toolData.google_keyword_planner_searchVolume});
+        }
+
+        if (volumes.length === 0) {
+          return <span className="text-gray-400">-</span>;
+        }
+
+        if (volumes.length === 1) {
+          return (
+            <span className="text-gray-700">
+              {ExternalToolDataMapper.formatMetricValue('volume', volumes[0].value)}
+            </span>
+          );
+        }
+
+        // Multiple sources - show all
         return (
-          <span className="text-gray-700">
-            {ExternalToolDataMapper.formatMetricValue('volume', volume as number | string | undefined)}
-          </span>
+          <div className="flex flex-col space-y-1">
+            {volumes.map((vol, idx) => (
+              <div key={idx} className="flex items-center space-x-2">
+                <span className="text-xs text-gray-500 min-w-[60px]">{vol.source}:</span>
+                <span className="text-gray-700">
+                  {ExternalToolDataMapper.formatMetricValue('volume', vol.value)}
+                </span>
+              </div>
+            ))}
+          </div>
         );
       },
     },
@@ -148,17 +218,57 @@ export default function KeywordDataTable({
       title: 'Difficulty',
       sortable: true,
       render: (value: unknown, keyword: Keyword) => {
-        // Prefer external tool data over basic difficulty
-        const difficulty = keyword.external_tool_data?.standardMetrics.difficulty ?? value;
-        const difficultyNum = typeof difficulty === 'number' ? difficulty : null;
+        const toolData = keyword.external_tool_data || {};
+        const difficulties: Array<{source: string, value: number}> = [];
+
+        // Main difficulty
+        if (value !== null && value !== undefined && typeof value === 'number') {
+          difficulties.push({source: 'Base', value: value});
+        }
+
+        // Semrush difficulty
+        if (toolData.semrush_difficulty !== undefined && typeof toolData.semrush_difficulty === 'number') {
+          difficulties.push({source: 'Semrush', value: toolData.semrush_difficulty});
+        }
+
+        // Ahrefs difficulty
+        if (toolData.ahrefs_difficulty !== undefined && typeof toolData.ahrefs_difficulty === 'number') {
+          difficulties.push({source: 'Ahrefs', value: toolData.ahrefs_difficulty});
+        }
+
+        // Google Keyword Planner competition
+        if (toolData.google_keyword_planner_competitionIndex !== undefined && typeof toolData.google_keyword_planner_competitionIndex === 'number') {
+          difficulties.push({source: 'GKP', value: Math.round(toolData.google_keyword_planner_competitionIndex * 100)});
+        }
+
+        if (difficulties.length === 0) {
+          return <span className="text-gray-400">-</span>;
+        }
+
+        if (difficulties.length === 1) {
+          const diff = difficulties[0];
+          return (
+            <div className="flex items-center space-x-2">
+              <span className={getDifficultyColor(diff.value)}>
+                {getDifficultyLabel(diff.value)}
+              </span>
+              <span className="text-xs text-gray-500">({diff.value})</span>
+            </div>
+          );
+        }
+
+        // Multiple sources - show all
         return (
-          <div className="flex items-center space-x-2">
-            <span className={getDifficultyColor(difficultyNum)}>
-              {getDifficultyLabel(difficultyNum)}
-            </span>
-            {difficultyNum && (
-              <span className="text-xs text-gray-500">({difficultyNum})</span>
-            )}
+          <div className="flex flex-col space-y-1">
+            {difficulties.map((diff, idx) => (
+              <div key={idx} className="flex items-center space-x-2">
+                <span className="text-xs text-gray-500 min-w-[60px]">{diff.source}:</span>
+                <span className={getDifficultyColor(diff.value)}>
+                  {getDifficultyLabel(diff.value)}
+                </span>
+                <span className="text-xs text-gray-500">({diff.value})</span>
+              </div>
+            ))}
           </div>
         );
       },
@@ -192,6 +302,22 @@ export default function KeywordDataTable({
           [ToolSource.AI_GENERATED]: 'bg-purple-100 text-purple-800',
           [ToolSource.MANUAL]: 'bg-gray-100 text-gray-800',
         };
+
+        // If multiple sources, show them as separate badges
+        if (source.includes(', ')) {
+          const sources = source.split(', ');
+          return (
+            <div className="flex flex-wrap gap-1">
+              {sources.map((src, idx) => (
+                <span key={idx} className={`inline-flex px-1.5 py-0.5 text-xs font-medium rounded ${
+                  colorMap[src] || 'bg-gray-100 text-gray-800'
+                }`}>
+                  {src}
+                </span>
+              ))}
+            </div>
+          );
+        }
 
         return (
           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${

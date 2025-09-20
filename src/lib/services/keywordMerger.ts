@@ -213,6 +213,17 @@ export class KeywordMerger {
       }
     }
 
+    // Update main fields when existing values are empty and imported values exist
+    if ((merged.searchVolume === null || merged.searchVolume === undefined) && imported.searchVolume !== undefined) {
+      merged.searchVolume = imported.searchVolume;
+      changes.push(`Set search volume to ${imported.searchVolume}`);
+    }
+
+    if ((merged.difficulty === null || merged.difficulty === undefined) && imported.difficulty !== undefined) {
+      merged.difficulty = imported.difficulty;
+      changes.push(`Set difficulty to ${imported.difficulty}`);
+    }
+
     // Always merge external tool data if no conflicts
     if (!conflicts.some(c => c.field === 'externalToolData')) {
       // Merge each field from imported data directly
