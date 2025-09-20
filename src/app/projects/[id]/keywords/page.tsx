@@ -6,11 +6,13 @@ import AppLayout from '../../../../components/layout/AppLayout';
 import KeywordGenerationTrigger from '../../../../components/KeywordGenerationTrigger';
 import KeywordList from '../../../../components/KeywordList';
 import ErrorModal from '../../../../components/ui/ErrorModal';
+import SequentialWorkflowNavigation from '../../../../components/SequentialWorkflowNavigation';
 
 interface Project {
   id: string;
   name: string;
   domain: string | null;
+  default_region: string;
   tenantId: string;
   tenantName: string;
   createdAt: string;
@@ -22,6 +24,11 @@ interface Page {
   url: string | null;
   title: string | null;
   content: string;
+  analysis_status: Record<string, {
+    analyzed: boolean;
+    analyzedAt?: string;
+    keywordCount?: number;
+  }> | null;
   createdAt: string;
 }
 
@@ -61,6 +68,7 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
   const [pages, setPages] = useState<Page[]>([]);
   const [keywordLists, setKeywordLists] = useState<KeywordListData[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<string>('');
+  const [selectedRegion, setSelectedRegion] = useState<string>('UK');
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -112,6 +120,10 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
       const data = await response.json();
       if (data.success && data.project) {
         setProject(data.project);
+        // Set default region from project
+        if (data.project.default_region) {
+          setSelectedRegion(data.project.default_region);
+        }
       } else {
         setError('Failed to load project');
       }
@@ -258,6 +270,14 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
     }
   }, [projectId, selectedPageId, searchTerm, fetchKeywordLists]);
 
+  // Handle workflow navigation
+  const handleWorkflowPageChange = useCallback((pageId: string) => {
+    setSelectedPageId(pageId);
+  }, []);
+
+  const handleWorkflowRegionChange = useCallback((region: string) => {
+    setSelectedRegion(region);
+  }, []);
 
   if (isLoading) {
     return (
@@ -319,6 +339,22 @@ export default function ProjectKeywordsPage({ params }: ProjectKeywordsPageProps
             </div>
           </div>
         </div>
+
+        {/* Sequential Workflow Navigation */}
+        {pages.length > 0 && (
+          <div className="mb-8">
+            <SequentialWorkflowNavigation
+              projectId={projectId}
+              project={project}
+              pages={pages}
+              currentPageId={selectedPageId}
+              selectedRegion={selectedRegion}
+              onPageChange={handleWorkflowPageChange}
+              onRegionChange={handleWorkflowRegionChange}
+              showSummary={true}
+            />
+          </div>
+        )}
 
         {/* Page Selection and Keyword Generation Section */}
         <div className="mb-8">
