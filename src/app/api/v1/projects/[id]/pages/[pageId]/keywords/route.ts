@@ -251,7 +251,7 @@ export async function POST(
       success: true,
       keywordList: completeKeywordList,
       region: region,
-      analysisStatus: updatedAnalysisStatus[region],
+      analysisStatus: (updatedAnalysisStatus as Record<string, AnalysisStatus>)[region],
       aiMetadata: {
         tokensUsed: aiResponse.tokensUsed,
         processingTime: aiResponse.processingTime,

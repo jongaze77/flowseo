@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import DataTable, { type TableColumn } from './ui/DataTable';
 import ErrorModal from './ui/ErrorModal';
 import ConfirmationModal from './ui/ConfirmationModal';
+import { ExternalToolDataMapper, type ExternalToolData, ToolSource } from '../lib/utils/externalToolDataMapper';
 
 interface Keyword {
   id: string;
@@ -11,7 +12,7 @@ interface Keyword {
   search_volume?: number | null;
   difficulty?: number | null;
   region?: string | null;
-  external_tool_data?: Record<string, unknown>;
+  external_tool_data?: ExternalToolData;
   created_at: string;
 }
 
@@ -93,26 +94,28 @@ export default function KeywordDataTable({
   };
 
   const getToolSource = (keyword: Keyword): string => {
-    if (keyword.external_tool_data?.tool_source) {
-      return String(keyword.external_tool_data.tool_source);
+    if (keyword.external_tool_data?.source) {
+      return keyword.external_tool_data.source;
     }
-    return 'AI Generated';
+    return ToolSource.AI_GENERATED;
   };
 
   const getCompetition = (keyword: Keyword): string => {
-    if (keyword.external_tool_data?.competition !== undefined) {
-      return String(keyword.external_tool_data.competition);
+    if (keyword.external_tool_data?.standardMetrics.competition !== undefined) {
+      return ExternalToolDataMapper.formatMetricValue(
+        'competition',
+        keyword.external_tool_data.standardMetrics.competition
+      );
     }
     return 'N/A';
   };
 
   const getCPC = (keyword: Keyword): string => {
-    if (keyword.external_tool_data?.cpc !== undefined) {
-      const cpc = keyword.external_tool_data.cpc;
-      if (typeof cpc === 'number') {
-        return `$${cpc.toFixed(2)}`;
-      }
-      return String(cpc);
+    if (keyword.external_tool_data?.standardMetrics.cpc !== undefined) {
+      return ExternalToolDataMapper.formatMetricValue(
+        'cpc',
+        keyword.external_tool_data.standardMetrics.cpc
+      );
     }
     return 'N/A';
   };
@@ -130,25 +133,31 @@ export default function KeywordDataTable({
       key: 'search_volume',
       title: 'Volume',
       sortable: true,
-      render: (value: unknown) => (
-        <span className="text-gray-700">
-          {typeof value === 'number' && value !== null ? value.toLocaleString() : 'N/A'}
-        </span>
-      ),
+      render: (value: unknown, keyword: Keyword) => {
+        // Prefer external tool data over basic search_volume
+        const volume = keyword.external_tool_data?.standardMetrics.volume ?? value;
+        return (
+          <span className="text-gray-700">
+            {ExternalToolDataMapper.formatMetricValue('volume', volume as number | string | undefined)}
+          </span>
+        );
+      },
     },
     {
       key: 'difficulty',
       title: 'Difficulty',
       sortable: true,
-      render: (value: unknown) => {
-        const difficulty = typeof value === 'number' ? value : null;
+      render: (value: unknown, keyword: Keyword) => {
+        // Prefer external tool data over basic difficulty
+        const difficulty = keyword.external_tool_data?.standardMetrics.difficulty ?? value;
+        const difficultyNum = typeof difficulty === 'number' ? difficulty : null;
         return (
           <div className="flex items-center space-x-2">
-            <span className={getDifficultyColor(difficulty)}>
-              {getDifficultyLabel(difficulty)}
+            <span className={getDifficultyColor(difficultyNum)}>
+              {getDifficultyLabel(difficultyNum)}
             </span>
-            {difficulty && (
-              <span className="text-xs text-gray-500">({difficulty})</span>
+            {difficultyNum && (
+              <span className="text-xs text-gray-500">({difficultyNum})</span>
             )}
           </div>
         );
@@ -177,10 +186,11 @@ export default function KeywordDataTable({
       render: (_, keyword: Keyword) => {
         const source = getToolSource(keyword);
         const colorMap: Record<string, string> = {
-          'Semrush': 'bg-orange-100 text-orange-800',
-          'Ahrefs': 'bg-blue-100 text-blue-800',
-          'Keyword Planner': 'bg-green-100 text-green-800',
-          'AI Generated': 'bg-purple-100 text-purple-800',
+          [ToolSource.SEMRUSH]: 'bg-orange-100 text-orange-800',
+          [ToolSource.AHREFS]: 'bg-blue-100 text-blue-800',
+          [ToolSource.KEYWORD_PLANNER]: 'bg-green-100 text-green-800',
+          [ToolSource.AI_GENERATED]: 'bg-purple-100 text-purple-800',
+          [ToolSource.MANUAL]: 'bg-gray-100 text-gray-800',
         };
 
         return (
