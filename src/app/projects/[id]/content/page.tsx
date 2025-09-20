@@ -4,11 +4,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '../../../../components/layout/AppLayout';
 import ContentIngestionForm from '../../../../components/ContentIngestionForm';
+import PageAnalysisTracker from '../../../../components/PageAnalysisTracker';
 
 interface Project {
   id: string;
   name: string;
   domain: string | null;
+  default_region: string;
   tenantId: string;
   tenantName: string;
   createdAt: string;
@@ -20,6 +22,11 @@ interface Page {
   url: string | null;
   title: string | null;
   content: string;
+  analysis_status: Record<string, {
+    analyzed: boolean;
+    analyzedAt?: string;
+    keywordCount?: number;
+  }> | null;
   createdAt: string;
 }
 
@@ -116,21 +123,6 @@ export default function ProjectContentPage({ params }: ProjectContentPageProps) 
     router.push('/projects');
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const truncateContent = (content: string, maxLength: number = 150) => {
-    if (content.length <= maxLength) return content;
-    return content.substring(0, maxLength) + '...';
-  };
 
   if (isLoading) {
     return (
@@ -220,70 +212,28 @@ export default function ProjectContentPage({ params }: ProjectContentPageProps) 
             />
           </div>
 
-          {/* Existing Content Sidebar */}
+          {/* Page Analysis Tracker Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white border border-gray-200 rounded-lg">
-              <div className="px-4 py-3 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Existing Content</h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {pages.length} {pages.length === 1 ? 'page' : 'pages'}
-                </p>
-              </div>
-
-              <div className="max-h-96 overflow-y-auto">
-                {isPagesLoading ? (
-                  <div className="p-4">
-                    <div className="animate-pulse space-y-3">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="space-y-2">
-                          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                        </div>
-                      ))}
+            {isPagesLoading ? (
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="animate-pulse space-y-3">
+                  <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                     </div>
-                  </div>
-                ) : pages.length === 0 ? (
-                  <div className="p-4 text-center">
-                    <div className="text-gray-400 text-sm">No content yet</div>
-                    <p className="text-xs text-gray-500 mt-1">Add your first content to get started</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-200">
-                    {pages.map((page) => (
-                      <div key={page.id} className="p-4">
-                        <div className="space-y-2">
-                          <div className="flex items-start justify-between">
-                            <h4 className="text-sm font-medium text-gray-900 line-clamp-2">
-                              {page.title || 'Untitled Content'}
-                            </h4>
-                          </div>
-
-                          {page.url && (
-                            <p className="text-xs text-blue-600 truncate">{page.url}</p>
-                          )}
-
-                          <p className="text-xs text-gray-600 line-clamp-3">
-                            {truncateContent(page.content)}
-                          </p>
-
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-gray-500">
-                              Added {formatDate(page.createdAt)}
-                            </p>
-                            <button
-                              onClick={() => router.push(`/projects/${projectId}/keywords`)}
-                              className="px-3 py-1 text-xs bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded border border-purple-300 cursor-pointer transition-colors"
-                            >
-                              Generate Keywords →
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <PageAnalysisTracker
+                projectId={projectId}
+                project={project}
+                pages={pages}
+                showNavigation={true}
+              />
+            )}
           </div>
         </div>
       </div>

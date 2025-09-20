@@ -122,12 +122,18 @@ export async function POST(request: NextRequest) {
     // Handle default prompt logic - if this prompt is being set as default,
     // remove default from other prompts of the same type
     if (validatedData.promptConfig.isDefault) {
+      const whereClause: any = {
+        tenant_id: user.tenant_id,
+        prompt_type: validatedData.promptConfig.promptType,
+      };
+
+      // Only add the 'not' condition if we have a valid existing ID
+      if (validatedData.promptConfig.id) {
+        whereClause.id = { not: validatedData.promptConfig.id };
+      }
+
       await prisma.aIPrompt.updateMany({
-        where: {
-          tenant_id: user.tenant_id,
-          prompt_type: validatedData.promptConfig.promptType,
-          id: { not: validatedData.promptConfig.id || '' }
-        },
+        where: whereClause,
         data: { is_default: false }
       });
     }

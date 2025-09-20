@@ -18,6 +18,7 @@ const keywordGenerationEndpointSchema = z.object({
   }),
   targetCount: z.number().min(1).max(200).optional().default(100),
   keywordListName: z.string().min(1, 'Keyword list name is required'),
+  region: z.enum(['UK', 'US', 'AU', 'CA']).optional(),
 });
 
 // Helper function to get authenticated user from request
@@ -175,12 +176,16 @@ export async function POST(
       );
     }
 
+    // Get region from request body (with fallback to project default)
+    const region = body.region || project.default_region;
+
     // Save keyword list to database
     const keywordList = await prisma.keywordList.create({
       data: {
         name: validatedData.keywordListName,
         project_id: resolvedParams.id,
         page_id: resolvedParams.pageId,
+        region: region,
         generated_at: new Date(),
       },
     });
@@ -191,10 +196,34 @@ export async function POST(
       text: keyword.text,
       search_volume: keyword.searchVolume || null,
       difficulty: keyword.difficulty || null,
+      region: region,
     }));
 
     await prisma.keyword.createMany({
       data: keywordData,
+    });
+
+    // Update page analysis status
+    type AnalysisStatus = {
+      analyzed: boolean;
+      analyzedAt?: string;
+      keywordCount?: number;
+    };
+    const currentAnalysisStatus = page.analysis_status as Record<string, AnalysisStatus> || {};
+    const updatedAnalysisStatus = {
+      ...currentAnalysisStatus,
+      [region]: {
+        analyzed: true,
+        analyzedAt: new Date().toISOString(),
+        keywordCount: aiResponse.keywords.length,
+      },
+    };
+
+    await prisma.page.update({
+      where: { id: resolvedParams.pageId },
+      data: {
+        analysis_status: updatedAnalysisStatus,
+      },
     });
 
     // Fetch complete keyword list with keywords for response
@@ -221,6 +250,8 @@ export async function POST(
     return NextResponse.json({
       success: true,
       keywordList: completeKeywordList,
+      region: region,
+      analysisStatus: updatedAnalysisStatus[region],
       aiMetadata: {
         tokensUsed: aiResponse.tokensUsed,
         processingTime: aiResponse.processingTime,
