@@ -199,12 +199,10 @@ export class KeywordMerger {
           break;
         case 'merge':
           if (conflict.field === 'externalToolData') {
-            // Merge external tool data
-            merged.externalToolData = Object.assign(
-              {},
-              merged.externalToolData,
-              { [`${toolSource}_data`]: imported.externalToolData }
-            );
+            // Merge external tool data by flattening imported data
+            Object.keys(imported.externalToolData).forEach(key => {
+              merged.externalToolData[`${toolSource}_${key}`] = imported.externalToolData[key];
+            });
             changes.push(`Merged ${toolSource} data into external tool data`);
             merged.conflictsResolved++;
           }
@@ -217,8 +215,9 @@ export class KeywordMerger {
 
     // Always merge external tool data if no conflicts
     if (!conflicts.some(c => c.field === 'externalToolData')) {
-      Object.assign(merged.externalToolData, {
-        [`${toolSource}_data`]: JSON.stringify(imported.externalToolData)
+      // Merge each field from imported data directly
+      Object.keys(imported.externalToolData).forEach(key => {
+        merged.externalToolData[`${toolSource}_${key}`] = imported.externalToolData[key];
       });
       changes.push(`Added ${toolSource} data`);
     }

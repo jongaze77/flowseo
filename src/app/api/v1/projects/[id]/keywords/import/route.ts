@@ -151,9 +151,8 @@ export async function POST(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
+  // Note: Don't disconnect here since processImport is running in background
 }
 
 /**
@@ -211,8 +210,6 @@ export async function GET(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -230,6 +227,30 @@ async function processImport({
   validatedRequest: z.infer<typeof importRequestSchema>;
   _userId: string;
 }) {
+  // Create a dedicated Prisma client for this background process
+  const processPrisma = new PrismaClient();
+
+  // Database retry helper function
+  async function withRetry<T>(operation: () => Promise<T>, maxRetries: number = 3): Promise<T> {
+    let lastError: Error;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error as Error;
+        console.warn(`Database operation failed on attempt ${attempt}/${maxRetries}:`, error);
+
+        if (attempt < maxRetries) {
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+      }
+    }
+
+    throw lastError!;
+  }
+
   try {
     // Update progress: Parsing CSV
     updateImportProgress(importId, 'processing', 10, 'Parsing CSV file...');
@@ -292,37 +313,58 @@ async function processImport({
     // Update progress: Getting existing keywords
     updateImportProgress(importId, 'processing', 55, 'Loading existing keywords for merge comparison...');
 
-    // Get existing keywords for the project
-    const existingKeywordLists = await prisma.keywordList.findMany({
-      where: { project_id: project.id },
-      include: {
-        keywords: {
-          select: {
-            id: true,
-            keyword_list_id: true,
-            text: true,
-            search_volume: true,
-            difficulty: true,
-            region: true,
-            external_tool_data: true,
-            created_at: true
-          }
-        }
-      }
-    });
+    // Get existing keywords for the project to merge with
+    let existingKeywords: Array<{
+      id: string;
+      keyword_list_id: string;
+      text: string;
+      search_volume: number | null;
+      difficulty: number | null;
+      region: string | null;
+      external_tool_data: Record<string, string | number | boolean> | null;
+      created_at: Date;
+    }> = [];
 
-    const existingKeywords = existingKeywordLists.flatMap(list =>
-      list.keywords.map(keyword => ({
-        id: keyword.id,
-        keywordListId: keyword.keyword_list_id,
-        text: keyword.text,
-        searchVolume: keyword.search_volume ?? undefined,
-        difficulty: keyword.difficulty ?? undefined,
-        region: keyword.region ?? undefined,
-        externalToolData: keyword.external_tool_data as Record<string, string | number | boolean> || {},
-        createdAt: keyword.created_at
-      }))
-    );
+    try {
+      const rawKeywords = await withRetry(() => processPrisma.keyword.findMany({
+        where: {
+          keyword_list: {
+            project_id: project.id
+          }
+        },
+        select: {
+          id: true,
+          keyword_list_id: true,
+          text: true,
+          search_volume: true,
+          difficulty: true,
+          region: true,
+          external_tool_data: true,
+          created_at: true
+        }
+      }));
+
+      // Convert the raw keywords to our expected type
+      existingKeywords = rawKeywords.map(keyword => ({
+        ...keyword,
+        external_tool_data: keyword.external_tool_data as Record<string, string | number | boolean> | null
+      }));
+    } catch (dbError) {
+      console.error('Database connection error during keyword lookup:', dbError);
+      // If we can't load existing keywords, assume empty array and proceed
+      existingKeywords = [];
+    }
+
+    const mappedExistingKeywords = existingKeywords.map(keyword => ({
+      id: keyword.id,
+      keywordListId: keyword.keyword_list_id,
+      text: keyword.text,
+      searchVolume: keyword.search_volume ?? undefined,
+      difficulty: keyword.difficulty ?? undefined,
+      region: keyword.region ?? undefined,
+      externalToolData: keyword.external_tool_data as Record<string, string | number | boolean> || {},
+      createdAt: keyword.created_at
+    }));
 
     // Update progress: Merging keywords
     updateImportProgress(importId, 'processing', 70, 'Merging imported keywords with existing data...');
@@ -337,38 +379,14 @@ async function processImport({
     };
 
     const merger = new (await import('../../../../../../../lib/services/keywordMerger')).KeywordMerger(mergerOptions);
-    const mergeResult = await merger.mergeKeywords(existingKeywords, mappedKeywords, toolSource);
+    const mergeResult = await merger.mergeKeywords(mappedExistingKeywords, mappedKeywords, toolSource);
 
     // Update progress: Saving to database
-    updateImportProgress(importId, 'processing', 85, 'Saving results to database...');
-
-    // Create or get keyword list
-    let keywordList;
-    if (validatedRequest.keywordListId) {
-      keywordList = await prisma.keywordList.findFirst({
-        where: {
-          id: validatedRequest.keywordListId,
-          project_id: project.id
-        }
-      });
-
-      if (!keywordList) {
-        throw new Error('Keyword list not found or access denied');
-      }
-    } else {
-      const listName = validatedRequest.keywordListName || `Imported from ${toolSource} - ${new Date().toLocaleString()}`;
-      keywordList = await prisma.keywordList.create({
-        data: {
-          project_id: project.id,
-          name: listName,
-          region: project.default_region
-        }
-      });
-    }
+    updateImportProgress(importId, 'processing', 85, 'Updating existing keywords with Semrush data...');
 
     // Save merged keywords (update existing)
     for (const mergedKeyword of mergeResult.matched) {
-      await prisma.keyword.update({
+      await withRetry(() => processPrisma.keyword.update({
         where: { id: mergedKeyword.id },
         data: {
           search_volume: mergedKeyword.searchVolume,
@@ -376,38 +394,70 @@ async function processImport({
           region: mergedKeyword.region,
           external_tool_data: mergedKeyword.externalToolData
         }
-      });
+      }));
     }
 
-    // Save new keywords
+    // Handle new keywords (from Keyword Planner, Ahrefs, etc.)
     if (mergeResult.newKeywords.length > 0) {
-      await prisma.keyword.createMany({
-        data: mergeResult.newKeywords.map(keyword => ({
-          keyword_list_id: keywordList.id,
-          text: keyword.text,
-          search_volume: keyword.searchVolume,
-          difficulty: keyword.difficulty,
-          region: keyword.region,
-          external_tool_data: keyword.externalToolData
-        }))
-      });
+      // Find the first existing keyword list to add new keywords to
+      const existingKeywordList = await withRetry(() => processPrisma.keywordList.findFirst({
+        where: {
+          project_id: project.id
+        },
+        orderBy: {
+          created_at: 'desc' // Use most recent list
+        }
+      }));
+
+      if (existingKeywordList) {
+        await withRetry(() => processPrisma.keyword.createMany({
+          data: mergeResult.newKeywords.map(keyword => ({
+            keyword_list_id: existingKeywordList.id,
+            text: keyword.text,
+            search_volume: keyword.searchVolume,
+            difficulty: keyword.difficulty,
+            region: keyword.region,
+            external_tool_data: keyword.externalToolData
+          }))
+        }));
+      } else {
+        console.log(`Warning: Found ${mergeResult.newKeywords.length} new keywords but no existing keyword list to add them to:`,
+          mergeResult.newKeywords.map(k => k.text));
+      }
     }
 
     // Generate audit trail
     const auditTrail = merger.generateAuditTrail(mergeResult, toolSource);
+
+    // Get keyword list info for response
+    const keywordList = await withRetry(() => processPrisma.keywordList.findFirst({
+      where: {
+        project_id: project.id
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    }));
 
     // Complete import
     updateImportProgress(importId, 'completed', 100, 'Import completed successfully', {
       summary: mergeResult.summary,
       conflicts: mergeResult.conflicts,
       errors: mergeResult.errors,
-      keywordListId: keywordList.id,
-      keywordListName: keywordList.name,
+      keywordListId: keywordList?.id || 'unknown',
+      keywordListName: keywordList?.name || 'Existing Keywords',
       auditTrail
     });
 
   } catch (error) {
     console.error('Import processing error:', error);
     updateImportProgress(importId, 'failed', 0, undefined, undefined, error instanceof Error ? error.message : 'Unknown import error');
+  } finally {
+    // Always disconnect the background process Prisma client
+    try {
+      await processPrisma.$disconnect();
+    } catch (disconnectError) {
+      console.warn('Error disconnecting background Prisma client:', disconnectError);
+    }
   }
 }

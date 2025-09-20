@@ -48,18 +48,14 @@ const SEMRUSH_SCHEMA: ToolSchemaDefinition = {
   tool: 'semrush',
   confidence: 0,
   requiredColumns: ['keyword'],
-  optionalColumns: ['search volume', 'kd', 'cpc', 'competition level', 'results', 'intent', 'position', 'previous position', 'change', 'serp features'],
+  optionalColumns: ['volume', 'keyword difficulty', 'cpc (gbp)', 'intent', 'trend', 'serp features'],
   columnMappings: [
     { sourceColumn: 'keyword', targetField: 'keyword', required: true },
-    { sourceColumn: 'search volume', targetField: 'searchVolume', required: false, transform: parseNumeric },
-    { sourceColumn: 'kd', targetField: 'difficulty', required: false, transform: parseNumeric },
-    { sourceColumn: 'cpc', targetField: 'cpc', required: false, transform: parseNumeric },
-    { sourceColumn: 'competition level', targetField: 'competitionLevel', required: false },
-    { sourceColumn: 'results', targetField: 'results', required: false, transform: parseNumeric },
+    { sourceColumn: 'volume', targetField: 'searchVolume', required: false, transform: parseNumeric },
+    { sourceColumn: 'keyword difficulty', targetField: 'difficulty', required: false, transform: parseNumeric },
+    { sourceColumn: 'cpc (gbp)', targetField: 'cpc', required: false, transform: parseNumeric },
     { sourceColumn: 'intent', targetField: 'intent', required: false },
-    { sourceColumn: 'position', targetField: 'position', required: false, transform: parseNumeric },
-    { sourceColumn: 'previous position', targetField: 'previousPosition', required: false, transform: parseNumeric },
-    { sourceColumn: 'change', targetField: 'change', required: false },
+    { sourceColumn: 'trend', targetField: 'trend', required: false },
     { sourceColumn: 'serp features', targetField: 'serpFeatures', required: false }
   ],
   valueValidators: {
@@ -189,16 +185,52 @@ export class ExternalToolMapper {
     }
 
     if (!bestMatch || highestConfidence < 0.5) {
+      // Create a fallback mapping for unknown formats
+      // Assume first column is keyword, treat others as external tool data
+      const fallbackMappings: ColumnMapping[] = [];
+      const unmappedColumns: string[] = [];
+
+      if (headers.length > 0) {
+        // Map first column to keyword
+        fallbackMappings.push({
+          sourceColumn: headers[0],
+          targetField: 'keyword',
+          required: true
+        });
+
+        // Check for common volume/difficulty column names
+        headers.slice(1).forEach(header => {
+          const lowerHeader = header.toLowerCase();
+          if (lowerHeader.includes('volume') || lowerHeader.includes('search')) {
+            fallbackMappings.push({
+              sourceColumn: header,
+              targetField: 'searchVolume',
+              required: false,
+              transform: parseNumeric
+            });
+          } else if (lowerHeader.includes('difficulty') || lowerHeader.includes('kd')) {
+            fallbackMappings.push({
+              sourceColumn: header,
+              targetField: 'difficulty',
+              required: false,
+              transform: parseNumeric
+            });
+          } else {
+            unmappedColumns.push(header);
+          }
+        });
+      }
+
       return {
         detectedTool: 'unknown',
-        confidence: highestConfidence,
-        mappings: [],
-        unmappedColumns: headers,
-        errors: [{
+        confidence: 0.1, // Low confidence but workable
+        mappings: fallbackMappings,
+        unmappedColumns,
+        errors: fallbackMappings.length === 0 ? [{
           column: 'general',
-          message: 'Could not automatically detect external tool format. Manual mapping required.',
+          message: 'No columns found in CSV file',
           type: 'missing_required'
-        }]
+        }] : []
       };
     }
 
@@ -244,7 +276,8 @@ export class ExternalToolMapper {
 
     switch (tool) {
       case 'semrush':
-        if (headerString.includes('kd') || headerString.includes('serp features')) {
+        if (headerString.includes('keyword difficulty') || headerString.includes('serp features') ||
+            headerString.includes('intent') || headerString.includes('trend')) {
           return 0.2;
         }
         break;

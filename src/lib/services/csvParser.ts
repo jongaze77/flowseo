@@ -72,7 +72,7 @@ export class CSVParser {
         transformHeader: this.options.trimHeaders ? (header: string) => header.trim() : undefined,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         chunk: (results: any, parser: any) => {
-          if (results.errors && results.errors.length > 0) {
+          if (results && results.errors && results.errors.length > 0) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             results.errors.forEach((error: any) => {
               errors.push({
@@ -83,15 +83,16 @@ export class CSVParser {
             });
           }
 
-          if (headers.length === 0 && results.meta.fields) {
+          if (headers.length === 0 && results && results.meta && results.meta.fields) {
             headers = results.meta.fields;
           }
 
           // Process and validate chunk data
-          const chunkData = this.processChunkData(results.data, processedRows, errors);
-          data = data.concat(chunkData);
-
-          processedRows += results.data.length;
+          if (results && results.data) {
+            const chunkData = this.processChunkData(results.data, processedRows, errors);
+            data = data.concat(chunkData);
+            processedRows += results.data.length;
+          }
           rowCount = Math.max(rowCount, processedRows);
 
           // Report progress
@@ -108,7 +109,7 @@ export class CSVParser {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         complete: (results: any) => {
-          if (results.errors && results.errors.length > 0) {
+          if (results && results.errors && results.errors.length > 0) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             results.errors.forEach((error: any) => {
               errors.push({
